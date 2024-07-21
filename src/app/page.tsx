@@ -1,4 +1,14 @@
+'use client'
 import Image from "next/image";
+import { logout } from "./logout/action";
+import { sendEmailNotification } from "./api/send/route";
+
+const submitEmail = async () => {
+  const result = await sendEmailNotification()
+  .then((res: any) => {
+    console.log(res)
+  })
+}
 
 export default function Home() {
   return (
@@ -107,6 +117,14 @@ export default function Home() {
             Instantly deploy your Next.js site to a shareable URL with Vercel.
           </p>
         </a>
+
+        <button onClick={() => submitEmail()}>
+          Send email
+        </button>
+
+        <button onClick={() => logout()}>
+          Logout
+        </button>
       </div>
     </main>
   );

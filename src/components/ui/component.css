@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.icon-transition{
+    transition: transform 0.3s ease;
+}
+
+.rotate-icon{
+    transform: rotate(180deg);
+}
+
+.eye {
+    --box-size: 25px;
+    --border-width: calc(var(--box-size) / 12);
+    --hair-length: calc(var(--border-width) * 2);
+    --iris-scale: 80%;
+    --pupil-scale: 35%;
+    --tansition-time: 0.15s;
+
+    width: var(--box-size);
+    height: var(--box-size);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.7);
+  }
+
+  .eye__base {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    border: solid var(--border-width) black;
+    border-radius: 80% 0;
+    transform: rotate(45deg);
+    overflow: hidden;
+  }
+
+  .eye__base__view {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    transform: translate(15%, 20%);
+    transition: transform calc(var(--tansition-time) * 1.5) ease-out;
+  }
+
+  .eye[data-closed] .eye__base__view {
+    transform: translate(3%, 3%);
+  }
+
+  .eye__base__view__iris {
+    width: var(--iris-scale);
+    height: var(--iris-scale);
+    border: solid var(--border-width) black;
+    border-radius: 100%;
+    transform: rotate(-45deg);
+  }
+
+  .eye__base__view__pupil {
+    position: absolute;
+    width: var(--pupil-scale);
+    height: var(--pupil-scale);
+    border: solid var(--border-width) black;
+    border-radius: 100%;
+    transform: rotate(-45deg);
+  }
+
+  .eye__lid {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+  }
+
+  .eye__lid__mask {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: #f9fafb;
+    border-radius: 80% 0;
+    transform: rotate(45deg);
+    transition: all var(--tansition-time) ease-out;
+  }
+
+  .eye[data-closed] .eye__lid__mask {
+    background: transparent;
+    transform: rotate(45deg) translate(-20%, -20%);
+  }
+
+  .eye__lid__lashes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    transition: transform var(--tansition-time) ease-out;
+  }
+
+  .eye[data-closed] .eye__lid__lashes {
+    transform: rotateX(180deg);
+  }
+
+  .eye__lid__lashes__line {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-bottom: solid var(--border-width) black;
+    border-right: solid var(--border-width) black;
+    border-radius: 80% 0;
+    transform: rotate(45deg);
+  }
+
+  .eye__lid__lashes__hair {
+    position: absolute;
+    left: 50%;
+    top: 105%;
+    transform: translate(-50%, -50%);
+    width: var(--border-width);
+    height: var(--hair-length);
+    background: black;
+  }
+
+  .eye__lid__lashes__hair:before {
+    content: "";
+    position: absolute;
+    left: calc(var(--box-size) * -0.4);
+    top: calc(var(--box-size) * -0.07);
+    width: var(--border-width);
+    height: var(--hair-length);
+    background: black;
+    transform: rotate(20deg);
+  }
+
+  .eye__lid__lashes__hair:after {
+    content: "";
+    position: absolute;
+    left: calc(var(--box-size) * 0.4);
+    top: calc(var(--box-size) * -0.07);
+    width: var(--border-width);
+    height: var(--hair-length);
+    background: black;
+    transform: rotate(-20deg);
+  }
