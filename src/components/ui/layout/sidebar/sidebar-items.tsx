@@ -10,7 +10,7 @@ const SidebarItems = ({ toggleMobileSidebar }: any) => {
   const pathDirect = pathname;
   
   return (
-    <Box sx={{ px: 3 }}>
+    <Box component="div" sx={{ px: 3 }}>
       <List sx={{ pt: 0 }} className="sidebarNav" component="div">
         {Menuitems.map((item) => {
           // {/********SubHeader**********/}

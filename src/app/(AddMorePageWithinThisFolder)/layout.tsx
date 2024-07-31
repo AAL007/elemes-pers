@@ -64,7 +64,7 @@ export default function RootLayout({
           {/* ------------------------------------------- */}
           {/* Page Route */}
           {/* ------------------------------------------- */}
-          <Box sx={{ minHeight: "calc(100vh - 170px)" }}>{children}</Box>
+          <Box component="div" sx={{ minHeight: "calc(100vh - 170px)" }}>{children}</Box>
           {/* ------------------------------------------- */}
           {/* End Page */}
           {/* ------------------------------------------- */}

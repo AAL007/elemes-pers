@@ -100,7 +100,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
           </DropdownMenu>
         </Dropdown>
 
-        <Box flexGrow={1} />
+        <Box component="div" flexGrow={1} />
         <Stack spacing={1} direction="row" alignItems="center">
           <Profile />
         </Stack>

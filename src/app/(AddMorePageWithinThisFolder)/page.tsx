@@ -11,7 +11,7 @@ import MonthlyEarnings from '@/components/ui/dashboard/monthly-earning';
 const Dashboard = () => {
   return (
     <PageContainer title="Dashboard" description="Landing Page">
-      <Box>
+      <Box component="div">
         <Grid container spacing={3}>
           <Grid item xs={12} lg={8}>
             <SalesOverview />

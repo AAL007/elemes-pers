@@ -43,7 +43,7 @@ const DashboardCard = ({
               alignItems={"center"}
               mb={3}
             >
-              <Box>
+              <Box component="div">
                 {title ? <Typography variant="h5">{title}</Typography> : ""}
 
                 {subtitle ? (
