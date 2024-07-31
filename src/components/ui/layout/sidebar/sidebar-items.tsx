@@ -1,9 +1,9 @@
 import React from "react";
-import Menuitems from "./MenuItems";
+import Menuitems from "./menu-items";
 import { usePathname } from "next/navigation";
 import { Box, List } from "@mui/material";
-import NavItem from "./NavItem";
-import NavGroup from "./NavGroup/NavGroup";
+import NavItem from "./nav-item";
+import NavGroup from "./nav-group/nav-group";
 
 const SidebarItems = ({ toggleMobileSidebar }: any) => {
   const pathname = usePathname();

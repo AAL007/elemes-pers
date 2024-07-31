@@ -8,7 +8,7 @@ import {
     TableRow,
     Chip
 } from '@mui/material';
-import DashboardCard from './DashboardCard';
+import DashboardCard from './dashboard-card';
 
 const products = [
     {

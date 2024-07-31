@@ -3,7 +3,9 @@ import { Spinner } from "@nextui-org/react";
 
 const Loading = () =>{
     return(
-        <div>Dash Loading</div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '75vh' }}>
+            <Spinner size="lg" color='primary'/>
+        </div>
     )
 }
 

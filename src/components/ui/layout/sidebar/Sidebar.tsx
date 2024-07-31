@@ -1,6 +1,6 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
-import Logo from "../shared/logo/Logo";
-import SidebarItems from "./SidebarItems";
+import Logo from "../shared/logo/logo";
+import SidebarItems from "./sidebar-items";
 // import { Upgrade } from "./Upgrade";
 
 interface ItemType {

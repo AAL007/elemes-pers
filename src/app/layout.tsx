@@ -1,5 +1,5 @@
 "use client";
-import { baselightTheme } from "../../utils/theme/DefaultColors";
+import { baselightTheme } from "../../utils/theme/default-colors";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Providers } from "./providers";

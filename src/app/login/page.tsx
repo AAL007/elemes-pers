@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { cn } from '../../../utils/aceternity/cn'
 import { FlipWords } from '@/components/ui/flip-words'
 import { PasswordInput } from '@/components/ui/password-input'
+import { Spinner } from '@nextui-org/react'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -94,9 +95,7 @@ export default function LoginPage() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
+                  <Spinner size={'sm'} color='primary'/>
                 ) : (
                   "Log In →"
                 )}

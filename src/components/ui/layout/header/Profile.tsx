@@ -70,12 +70,12 @@ const Profile = () => {
           </ListItemIcon>
           <ListItemText>My Profile</ListItemText>
         </MenuItem>
-        <MenuItem>
+        {/* <MenuItem>
           <ListItemIcon>
             <IconMail width={20} />
           </ListItemIcon>
           <ListItemText>My Account</ListItemText>
-        </MenuItem>
+        </MenuItem> */}
         <MenuItem>
           <ListItemIcon>
             <IconListCheck width={20} />
@@ -86,7 +86,7 @@ const Profile = () => {
           <Button
             href="#"
             variant="outlined"
-            color="primary"
+            color="error"
             component={Link}
             fullWidth
             onClick={() => logout()}

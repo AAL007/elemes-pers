@@ -1,12 +1,12 @@
 'use client'
 import { Grid, Box } from '@mui/material';
-import PageContainer from '@/components/ui/container/PageContainer';
+import PageContainer from '@/components/ui/container/page-container';
 // components
-import SalesOverview from '@/components/ui/dashboard/SalesOverview';
-import YearlyBreakup from '@/components/ui/dashboard/YearlyBreakup';
-import RecentTransactions from '@/components/ui/dashboard/RecentTransactions';
-import ProductPerformance from '@/components/ui/dashboard/ProductPerformance';
-import MonthlyEarnings from '@/components/ui/dashboard/MonthlyEarnings';
+import SalesOverview from '@/components/ui/dashboard/sales-overview';
+import YearlyBreakup from '@/components/ui/dashboard/yearly-breakup';
+import RecentTransactions from '@/components/ui/dashboard/recent-transactions';
+import ProductPerformance from '@/components/ui/dashboard/product-performance';
+import MonthlyEarnings from '@/components/ui/dashboard/monthly-earning';
 
 const Dashboard = () => {
   return (
