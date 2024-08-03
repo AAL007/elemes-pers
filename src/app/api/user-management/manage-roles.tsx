@@ -5,11 +5,17 @@ import { createClient } from "../../../../utils/supabase/client"
 export type MsRole = {
     RoleId: string;
     RoleName: string;
+    RoleCategoryId: string;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
     UpdatedDate: any;
     ActiveFlag: boolean;
+}
+
+export type SelectList = {
+    key: string;
+    label: string;
 }
 
 const supabase = createClient()
@@ -23,22 +29,31 @@ export async function createRole(role: MsRole) {
         }
         return object
     }
-    const { data, error } = await supabase.from('MsRole').insert(role)
-    if (error){
-        console.log('error', error);
+    const { data, error } = await supabase.from('MsRole').select().eq('RoleName', role.RoleName).neq('RoleId', role.RoleId).single()
+    if(error){
+        const { data, error } = await supabase.from('MsRole').insert(role)
+        if (error){
+            console.log('error', error);
+            let object = {
+                data: [],
+                statusCode: 400,
+                message: error.message
+            }
+            return object;
+        }
         let object = {
-            data: [],
-            statusCode: 400,
-            message: error.message
+            data: data,
+            statusCode: 200,
+            message: 'Role created successfully!'
         }
         return object;
     }
     let object = {
-        data: data,
-        statusCode: 200,
-        message: 'Role created successfully!'
+        data: [],
+        statusCode: 400,
+        message: 'Role Name that you inputed is already exist!'
     }
-    return object;
+    return object
 }
 
 export async function updateRole(role: MsRole) {
@@ -115,6 +130,26 @@ export async function fetchRoles() {
         message: 'Roles fetched successfully!'
     }
     return object;
+}
+
+export async function fetchRoleCategories() {
+    const { data, error } = await supabase.from('MsRoleCategory').select()
+    if(error){
+        console.log('error', error);
+        let object = {
+            data: [],
+            statusCode: 400,
+            message: error.message
+        }
+        return object;
+    }
+
+    let object = {
+        data: data,
+        statusCode: 200,
+        message: 'Role Categories fetched successfully!'
+    }
+    return object
 }
 
 // export async function fetchRole(roleId: string) {

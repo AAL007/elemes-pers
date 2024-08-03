@@ -1,21 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Avatar,
   Box,
   Menu,
-  Button,
   IconButton,
   MenuItem,
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
 import { logout } from "@/app/logout/action";
+import { Button } from "@nextui-org/react";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/lib/store";
+import "@/components/ui/component.css"
 
 import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import { loadUserFromStorage } from "@/lib/user-slice";
+import { color } from "framer-motion";
 
 const Profile = () => {
+  const dispatch = useDispatch();
+  const userData = useSelector((state: RootState) => state.user);
   const [anchorEl2, setAnchorEl2] = useState(null);
+  const [isLogout, setIsLogout] = useState(false);
   const handleClick2 = (event: any) => {
     setAnchorEl2(event.currentTarget);
   };
@@ -23,19 +31,17 @@ const Profile = () => {
     setAnchorEl2(null);
   };
 
+  useEffect(() => {
+    dispatch(loadUserFromStorage());
+  }, [dispatch]);
+
   return (
     <Box component="div">
-      <IconButton
-        size="large"
+      <Button
         aria-label="show 11 new notifications"
-        color="inherit"
         aria-controls="msgs-menu"
         aria-haspopup="true"
-        sx={{
-          ...(typeof anchorEl2 === "object" && {
-            color: "primary.main",
-          }),
-        }}
+        style={{ backgroundColor: "white", width: "100%", height: "50px" }}
         onClick={handleClick2}
       >
         <Avatar
@@ -46,7 +52,11 @@ const Profile = () => {
             height: 35,
           }}
         />
-      </IconButton>
+        <div>
+          <h5 className="profile-name" style={{ color: "black", fontSize: "14px", fontWeight: "600" }}>{userData.name}</h5>
+          <h5 className="profile-name" style={{ color: "black", fontSize: "12px", fontWeight: "400" }}>{userData.role}</h5>
+        </div>
+      </Button>
       {/* ------------------------------------------- */}
       {/* Message Dropdown */}
       {/* ------------------------------------------- */}
@@ -85,11 +95,10 @@ const Profile = () => {
         <Box component="div" mt={1} py={1} px={2}>
           <Button
             href="#"
-            variant="outlined"
-            color="error"
-            component={Link}
+            color="danger"
             fullWidth
-            onClick={() => logout()}
+            onClick={() => {setIsLogout(true); localStorage.removeItem('user'); logout()}}
+            isLoading={isLogout}
           >
             Logout
           </Button>
