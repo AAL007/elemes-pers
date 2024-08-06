@@ -46,55 +46,84 @@ async function getUserData(email: string) {
   const { data, error } = await supabase.from('MsStaff').select(`
     StaffName,
     StaffEmail,
-    RoleId,
-    MsRole:RoleId (
-      RoleId,
-      RoleName,
-      RoleCategoryId,
-      MsRoleCategory:RoleCategoryId (
-        RoleCategoryId,
-        RoleCategoryName
-      )
-    )
+    RoleId
   `).eq('StaffEmail', email).single()
 
   if (error) {
     const {data, error} = await supabase.from('MsStudent').select(`
       StudentName, 
       StudentEmail,
-      RoleId,
-      MsRole:RoleId (
-        RoleId,
-        RoleName,
-        RoleCategoryId,
-        MsRoleCategory:RoleCategoryId (
-          RoleCategoryId,
-          RoleCategoryName
-        )
-      )
+      RoleId
     `).eq('StudentEmail', email).single()
 
     if (error) {
       return {isError: true, message: error.message, statusCode: 400}
     }
 
+    const roleAndRoleCategory = await getUserRole(data.RoleId)
+    if(roleAndRoleCategory.isError){
+      return {isError: roleAndRoleCategory.isError, message: roleAndRoleCategory.message, statusCode: roleAndRoleCategory.statusCode}
+    }
+
     let user: userData = {
       email: data.StudentEmail,
       name: data.StudentName,
-      role: data.MsRole.RoleName,
-      roleCategory: data.MsRole.MsRoleCategory.RoleCategoryName
+      role: roleAndRoleCategory.object?.roleName,
+      roleCategory: roleAndRoleCategory.object?.roleCategoryName
     }
+
+    console.log(user)
 
     return {isError: false, message: '', statusCode: 200, user}
   }
 
+  const roleAndRoleCategory = await getUserRole(data.RoleId)
+    if(roleAndRoleCategory.isError){
+      return {isError: roleAndRoleCategory.isError, message: roleAndRoleCategory.message, statusCode: roleAndRoleCategory.statusCode}
+    }
+
   let user: userData = {
     email: data.StaffEmail,
     name: data.StaffName,
-    role: data.MsRole[0].RoleName,
-    roleCategory: data.MsRole[0].MsRoleCategory[0].RoleCategoryName
+    role: roleAndRoleCategory.object?.roleName,
+    roleCategory: roleAndRoleCategory.object?.roleCategoryName
   }
 
   return {isError: false, message: '', statusCode: 200, user}
 
+}
+
+async function getUserRole(roleId: string){
+  const supabase = createClient()
+
+  const { data, error } = await supabase.from('MsRole').select(`RoleName, RoleCategoryId`).eq('RoleId', roleId).single()
+
+  if (error) {
+    return {isError: true, message: error.message, statusCode: 400}
+  }
+
+  const roleCategoryName = await getUserRoleCategory(data.RoleCategoryId)
+
+  if(roleCategoryName.isError){
+    return {isError: roleCategoryName.isError, message: roleCategoryName.message, statusCode: roleCategoryName.statusCode}
+  }
+
+  let object = {
+    roleName: data.RoleName,
+    roleCategoryName: roleCategoryName.data?.RoleCategoryName
+  }
+
+  return {isError: false, message: '', statusCode: 200, object}
+}
+
+async function getUserRoleCategory(roleCategoryId: string){
+  const supabase = createClient()
+
+  const { data, error } = await supabase.from('MsRoleCategory').select('RoleCategoryName').eq('RoleCategoryId', roleCategoryId).single()
+
+  if (error) {
+    return {isError: true, message: error.message, statusCode: 400}
+  }
+
+  return {isError: false, message: '', statusCode: 200, data}
 }
