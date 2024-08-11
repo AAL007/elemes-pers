@@ -22,23 +22,26 @@ import {
   ChipProps,
   SortDescriptor,
   Tooltip,
-  Skeleton,
   ModalBody,
   ModalHeader,
   ModalFooter,
   Modal, 
   ModalContent,
   useDisclosure,
-  Spinner
+  Spinner,
+  Select,
+  SelectItem,
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { fetchRoles, deleteRole, createRole, updateRole, MsRole } from '../../../api/user-management/manage-roles';
+import { fetchRoles, deleteRole, createRole, updateRole, MsRole, fetchRoleCategories, SelectList} from '../../../api/user-management/manage-roles';
 import { generateGUID } from "../../../../../utils/boilerplate-function";
-import { error } from "console";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
+import { loadUserFromStorage } from "@/lib/user-slice";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -61,6 +64,7 @@ const statusOptions = [
 const defaultRole : MsRole = {
   RoleId: "",
   RoleName: "",
+  RoleCategoryId: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -75,6 +79,8 @@ function capitalize(str: string) {
 }
 
 const ManageRoles = () => {
+  const dispatch = useDispatch();
+  const userData = useSelector((state: RootState) => state.user);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
@@ -93,23 +99,31 @@ const ManageRoles = () => {
   let [role, setRole] = React.useState<MsRole | any>(defaultRole);
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
+  const [value, setValue] = React.useState("");
+  const [touched, setTouched] = React.useState(false);
+  const [roleCategories, setRoleCategories] = React.useState<SelectList[]>([])
 
-  // const handleEditClick = (roleId: string) => {
-  //   window.location.href = `/user-management/manage-roles/edit-role/${roleId}`
-  // }
-
-  // const handleAddClick = () => {
-  //   window.location.href = `/user-management/manage-roles/add-role`
-  // }
+  const isValid = value !== ""
 
   const [roles, setRoles] = React.useState<MsRole[]>([]);
   useEffect(() => {
+    dispatch(loadUserFromStorage());
     setIsFetchingRoles(true);
     fetchRoles().then((object: any) => {
       setRoles(object.data || []);
     });
+    fetchRoleCategories().then((object: any) => {
+      const roleCategories = object.data.map((z: any) => {
+        return{
+          key: z.RoleCategoryId,
+          label: z.RoleCategoryName
+        }
+      })
+      setRoleCategories(roleCategories)
+      console.log(roleCategories)
+    })
     setIsFetchingRoles(false);
-  }, []);
+  }, [dispatch]);
 
   const [page, setPage] = React.useState(1);
 
@@ -193,7 +207,7 @@ const ManageRoles = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Role">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setRoleId(role.RoleId); setRole(role); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setValue(role.RoleCategoryId); setRoleId(role.RoleId); setRole(role); onOpen()}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Role">
@@ -349,6 +363,7 @@ const ManageRoles = () => {
           setIsCreate(false);
           setRole(defaultRole);
           setErrorMessage("");
+          setValue("");
           onOpenChange()
         }}
         placement="top-center"
@@ -371,6 +386,24 @@ const ManageRoles = () => {
                     <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
                       {errorMessage}
                     </h5>
+                    <Select
+                      label= "Role Category"
+                      variant="bordered"
+                      placeholder="Select role category"
+                      errorMessage={isValid || !touched ? "" : "You need to select a role category"}
+                      isInvalid={isValid || !touched ? false: true}
+                      selectedKeys={[value]}
+                      className="max-w"
+                      onChange={(e) => {setValue(e.target.value)}}
+                      onClose={() => setTouched(true)}
+                      value={value}
+                    >
+                      {roleCategories.map((category) => (
+                        <SelectItem key={category.key}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -385,6 +418,7 @@ const ManageRoles = () => {
                   setIsDelete(false);
                   setIsCreate(false);
                   setErrorMessage("");
+                  setValue("");
                   onClose();
                 }}>
                   Close
@@ -396,7 +430,8 @@ const ManageRoles = () => {
                       let newRole = {
                         RoleId: generateGUID(),
                         RoleName: role.RoleName,
-                        CreatedBy: "User123",
+                        RoleCategoryId: value,
+                        CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
                         UpdatedBy: null,
                         UpdatedDate: new Date(0).toISOString(),
@@ -406,6 +441,7 @@ const ManageRoles = () => {
                         if(object.statusCode == 200){
                           onClose();
                           setIsCreate(false);
+                          setValue("");
                           setRole(defaultRole);
                           fetchRoles().then((object: any) => {
                             setRoles(object.data || []);
@@ -428,9 +464,10 @@ const ManageRoles = () => {
                       let updatedRole = {
                         RoleId: role.RoleId,
                         RoleName: role.RoleName,
+                        RoleCategoryId: value,
                         CreatedBy: role.CreatedBy,
                         CreatedDate: role.CreatedDate,
-                        UpdatedBy: "User123",
+                        UpdatedBy: userData.name,
                         UpdatedDate: new Date().toISOString(),
                         ActiveFlag: role.ActiveFlag,
                       }
@@ -438,6 +475,7 @@ const ManageRoles = () => {
                         if(object.statusCode == 200) {
                           onClose();
                           setIsEdit(false);
+                          setValue("");
                           setRole(defaultRole);
                           fetchRoles().then((object: any) => {
                             setRoles(object.data || [] as MsRole[]);
@@ -461,6 +499,7 @@ const ManageRoles = () => {
                         if(object.statusCode == 200){
                           onClose();
                           setIsDelete(false);
+                          setValue("");
                           setRole(defaultRole);
                           fetchRoles().then((object: any) => {
                             setRoles(object.data || []);

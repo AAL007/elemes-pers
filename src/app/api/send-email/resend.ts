@@ -3,7 +3,7 @@ import { EmailTemplate } from '../../../components/etc/email-template';
 import { Resend } from 'resend';
 import { NextResponse } from 'next/server';
 
-const resend = new Resend("re_fz4Dy97z_CheV8RYQLaDV7F58hhcwPbxK");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 let email: string = 'alfonsus.adrian@elemes.site'
 

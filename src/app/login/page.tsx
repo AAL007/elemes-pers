@@ -1,5 +1,5 @@
 'use client'
-import { login } from './action'
+import { useLogin } from './action'
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
@@ -12,6 +12,7 @@ import { Spinner } from '@nextui-org/react'
 import Link from 'next/link'
 
 export default function LoginPage() {
+  const { login } = useLogin()
   const[email, setEmail] = useState('')
   const[password, setPassword] = useState('')
   const[isLoading, setLoadingStatus] = useState(false)
@@ -33,6 +34,7 @@ export default function LoginPage() {
         if(res.statusCode != 200 && res.isError == true){
           setErrorMessage(res.message)
           setErrorStatus(true)
+          setLoadingStatus(false)
         }else{
           setErrorMessage('')
           setErrorStatus(false)
@@ -43,12 +45,12 @@ export default function LoginPage() {
       })
     }catch(e){
       console.log(e)
+      setLoadingStatus(false)
       // if(e instanceof Error){
       //   setErrorStatus(true)
       //   setErrorMessage(e.message)
       // }
     }
-    setLoadingStatus(false)
   };
 
 
