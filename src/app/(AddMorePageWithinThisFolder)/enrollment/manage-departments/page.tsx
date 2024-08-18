@@ -17,7 +17,6 @@ import {
   DropdownMenu,
   DropdownItem,
   Chip,
-  User,
   Pagination,
   Selection,
   ChipProps,
@@ -30,15 +29,19 @@ import {
   ModalContent,
   useDisclosure,
   Spinner,
+  Select,
+  SelectItem,
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { fetchRoles } from "@/app/api/user-management/manage-roles";
-import { fetchStudents, fetchStaffs, deleteStaff, deleteStudent } from "@/app/api/user-management/manage-users";
-import { UserList, MsRole } from "@/app/api/data-model";
+import { fetchDepartments, deleteDepartment, fetchFaculties } from '../../../api/enrollment/manage-departments';
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store";
+import { loadUserFromStorage } from "@/lib/user-slice";
+import { MsFaculty, MsDepartment, SelectList } from "@/app/api/data-model";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -46,12 +49,10 @@ const statusColorMap: Record<string, ChipProps["color"]>  = {
 };
 
 const columns = [
-  {name: "NAME", uid: "UserName", sortable: true},
-  {name: "EMAIL", uid: "UserEmail"},
-  {name: "ROLE", uid: "UserRole", sortable: true},
-  {name: "STATUS", uid: "ActiveFlag", sortable: true},
+  {name: "DEPARTMENT NAME", uid: "DepartmentName", sortable: true},
   {name: "CREATED BY", uid: "CreatedBy"},
   {name: "UPDATED BY", uid: "UpdatedBy"},
+  {name: "STATUS", uid: "ActiveFlag", sortable: true},
   {name: "ACTIONS", uid: "Actions"},
 ];
 
@@ -60,101 +61,78 @@ const statusOptions = [
   {name: "Inactive", uid: "inactive"},
 ];
 
-const defaultUser: UserList = {
-  UserId: "",
-  UserName: "",
-  UserEmail: "",
-  UserRole: "",
+const defaultDepartment : MsDepartment = {
+  DepartmentId: "",
+  DepartmentName: "",
   CreatedBy: "",
+  CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
+  UpdatedDate: new Date(0).toISOString(),
   ActiveFlag: false,
-  IsStaff: false,
+  FacultyId: "",
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["UserName", "UserEmail", "UserRole", "ActiveFlag", "Actions"];
+const INITIAL_VISIBLE_COLUMNS = ["DepartmentName", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const ManageUsers = () => {
+const ManageDepartments = () => {
+  const dispatch = useDispatch();
+  const userData = useSelector((state: RootState) => state.user);
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "UserName",
+    column: "DepartmentName",
     direction: "ascending",
   });
-  const [isFetchingUsers, setIsFetchingUsers] = React.useState(true);
+  const [isFetchingDepartment, setIsFetchingDepartment] = React.useState(true);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [isDelete, setIsDelete] = React.useState(false);
+  const [ facultyId, setFacultyId ] = React.useState<string>("");
+  const [touched, setTouched] = React.useState(false);
+  let [department, setDepartment] = React.useState<MsDepartment | any>(defaultDepartment);
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [user, setUser] = React.useState<UserList | any>(defaultUser);
+//   const [academicPeriods, setAcademicPeriods] = React.useState<SelectList[]>([])
 
-  const handleEditClick = (userId: string) => {
-    window.location.href = `/user-management/manage-users/edit-user/${userId}`
+  const isValid = facultyId !== ""
+
+  const handleEditClick = (departmentId: string) => {
+    window.location.href = `manage-departments/edit-department/${departmentId}`
   }
 
-  const handleAddClick = () => {
-    window.location.href = `/user-management/manage-users/add-user`
+  const handleAddClick = (facultyId: string) => {
+    console.log(facultyId)
+    window.location.href = `manage-departments/add-department/${facultyId}`
   }
 
-  const [users, setUsers] = React.useState<UserList[]>([]);
-  const [roles, setRoles] = React.useState<MsRole[]>([]);
-
-  const handleFetchUsers = async () => {
-    const rolesResponse = await fetchRoles()
-    const roles = rolesResponse.data
-    setRoles(roles)
-
-    const staffsResponse = await fetchStaffs();
-    const staffs = staffsResponse.data.map((z: any) => {
-      return{
-        UserId: z.StaffId,
-        UserName: z.StaffName,
-        UserEmail: z.StaffEmail,
-        UserRole: roles.find((role: any) => role.RoleId == z.RoleId)?.RoleName ?? "N/A",
-        CreatedBy: z.CreatedBy,
-        UpdatedBy: z.UpdatedBy,
-        ActiveFlag: z.ActiveFlag,
-        IsStaff: true,
-      }
+  const [departments, setDepartments] = React.useState<MsDepartment[]>([]);
+  const [faculties, setFaculties] = React.useState<SelectList[]>([]);
+  useEffect(() => {
+    dispatch(loadUserFromStorage());
+    fetchFaculties().then((object: any) => {
+        const faculties = object.data.map((z: MsFaculty) => {
+            return{
+                key: z.FacultyId,
+                label: z.FacultyName
+            }
+        })
+        setFaculties(faculties);
+        setFacultyId(faculties[0].key)
     })
-
-    const studentsResponse = await fetchStudents()
-    const students = studentsResponse.data.map((z: any) => {
-      return{
-        UserId: z.StudentId,
-        UserName: z.StudentName,
-        UserEmail: z.StudentEmail,
-        UserRole: roles.find((role: any) => role.RoleId == z.RoleId)?.RoleName ?? "N/A",
-        CreatedBy: z.CreatedBy,
-        UpdatedBy: z.UpdatedBy,
-        ActiveFlag: z.ActiveFlag,
-        IsStaff: false,
-      }
-    })
-
-    const combinedUsers = [...staffs, ...students];
-    const uniqueUsers = combinedUsers.filter((user, index, self) =>
-      index === self.findIndex((u) => u.UserId === user.UserId)
-    );
-
-    setUsers(uniqueUsers)
-  }
+  }, [dispatch]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsFetchingUsers(true);
-      await handleFetchUsers();
-      setIsFetchingUsers(false);
-    };
-  
-    fetchData();
-  }, []);
+    setIsFetchingDepartment(true);
+    fetchDepartments(facultyId).then((object: any) => {
+        setDepartments(object.data || []);
+    })
+    setIsFetchingDepartment(false);
+  }, [facultyId]);
 
   const [page, setPage] = React.useState(1);
 
@@ -166,22 +144,22 @@ const ManageUsers = () => {
     return columns.filter((column) => Array.from(visibleColumns).includes(column.uid));
   }, [visibleColumns]);
 
-const filteredItems = React.useMemo(() => {
-  let filteredUsers = [...users];
+  const filteredItems = React.useMemo(() => {
+    let filteredDepartments = [...departments];
 
-  if (hasSearchFilter) {
-    filteredUsers = filteredUsers.filter((user) =>
-      user.UserName.toLowerCase().includes(filterValue.toLowerCase()),
-    );
-  }
-  if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
-    filteredUsers = filteredUsers.filter((user) =>
-      Array.from(statusFilter).includes(user.ActiveFlag ? "active" : "inactive"),
-    );
-  }
+    if (hasSearchFilter) {
+      filteredDepartments = filteredDepartments.filter((department) =>
+        department.DepartmentName.toLowerCase().includes(filterValue.toLowerCase()),
+      );
+    }
+    if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
+      filteredDepartments = filteredDepartments.filter((department) =>
+        Array.from(statusFilter).includes(department.ActiveFlag ? "active" : "inactive"),
+      );
+    }
 
-  return filteredUsers;
-}, [users, hasSearchFilter, filterValue, statusFilter, statusOptions.length]);
+    return filteredDepartments;
+  }, [departments, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -194,74 +172,60 @@ const filteredItems = React.useMemo(() => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof UserList];
-      const second = b[sortDescriptor.column as keyof UserList];
+      const first = a[sortDescriptor.column as keyof MsDepartment];
+      const second = b[sortDescriptor.column as keyof MsDepartment];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((user: UserList, columnKey: React.Key) => {
-    const cellValue = user[columnKey as keyof UserList];
+  const renderCell = React.useCallback((department: MsDepartment, columnKey: React.Key) => {
+    const cellValue = department[columnKey as keyof MsDepartment];
 
     switch (columnKey) {
-      case "UserName":
+      case "DepartmentName":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{user.UserName}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{department.DepartmentName}</p>
           </div>
-        );
-      case "UserEmail":
-        return (
-          <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{user.UserEmail}</p>
-          </div>
-        );
-      case "UserRole":
-        return (
-          <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{user.UserRole}</p>
-          </div>
-        );
-      case "ActiveFlag":
-        return (
-          <Chip className="capitalize" color={statusColorMap[user.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
-            {user.ActiveFlag ? "active" : "inactive"}
-          </Chip>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{user.CreatedBy}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{department.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
               {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
-              <p className="text-bold text-tiny capitalize text-default-400">{user.UpdatedBy ?? "N/A"}</p>
+              <p className="text-bold text-tiny capitalize text-default-400">{department.UpdatedBy ?? "N/A"}</p>
             </div>
           );
-        case "Actions":
-          return (
-            <div className="relative flex items-center gap-2">
-              <Tooltip content="Edit Role">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EditIcon onClick={() => {handleEditClick(user.UserId)}} />
-                </span>
-              </Tooltip>
-              <Tooltip color="danger" content="Delete Role">
-                <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                  <DeleteIcon onClick={() => {setIsDelete(true); setUser(user); onOpen()}}/>
-                </span>
-              </Tooltip>
-            </div>
-          );
+      case "ActiveFlag":
+        return (
+          <Chip className="capitalize" color={statusColorMap[department.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
+            {department.ActiveFlag ? "active" : "inactive"}
+          </Chip>
+        );
+      case "Actions":
+        return (
+          <div className="relative flex items-center gap-2">
+            <Tooltip content="Edit Department">
+              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                <EditIcon onClick={() => {handleEditClick(department.DepartmentId)}} />
+              </span>
+            </Tooltip>
+            <Tooltip color="danger" content="Delete Department">
+              <span className="text-lg text-danger cursor-pointer active:opacity-50">
+                <DeleteIcon onClick={() => {setDepartment(department); onOpen()}}/>
+              </span>
+            </Tooltip>
+          </div>
+        );
       default:
         return cellValue;
     }
@@ -293,7 +257,7 @@ const filteredItems = React.useMemo(() => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search users..."
+            placeholder="Search departments..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
@@ -342,13 +306,13 @@ const filteredItems = React.useMemo(() => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button onClick={() => {handleAddClick()}} color="primary" endContent={<PlusIcon />}>
+            <Button onClick={() => {handleAddClick(facultyId)}} color="primary" endContent={<PlusIcon />}>
               Add New
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {users.length} users</span>
+          <span className="text-default-400 text-small">Total {departments.length} Departments</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -369,9 +333,10 @@ const filteredItems = React.useMemo(() => {
     filterValue,
     statusFilter,
     visibleColumns,
+    facultyId,
     onSearchChange,
     onRowsPerPageChange,
-    users.length,
+    departments.length,
     hasSearchFilter,
   ]);
 
@@ -403,7 +368,7 @@ const filteredItems = React.useMemo(() => {
         isDismissable={false}
         isOpen={isOpen} 
         onOpenChange={() => {
-
+          setDepartment(defaultDepartment);
           setErrorMessage("");
           onOpenChange()
         }}
@@ -412,45 +377,72 @@ const filteredItems = React.useMemo(() => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Delete Role</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Delete Department</ModalHeader>
               <ModalBody>
-                  <div className="flex flex-col gap-4">
-                    <p>Are you sure you want to delete <b>{user.UserName}</b> ?</p>
-                  </div>
+                <div className="flex flex-col gap-4">
+                    <p>Are you sure you want to delete <b>{department.DepartmentName}</b> ?</p>
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
-                  setIsDelete(false);
+                  setDepartment(defaultDepartment);
                   setErrorMessage("");
                   onClose();
                 }}>
                   Close
                 </Button>
                 <Button color="primary" onPress={async() => {
-                  setIsLoading(true);
-                  try{
-                    await (user.IsStaff ? deleteStaff(user.UserId) : deleteStudent(user.UserId)).then((object: any) => {
-                      if(object.statusCode == 200){
-                        setUser(defaultUser);
-                        handleFetchUsers();
-                        setErrorMessage("");
-                        setIsDelete(false);
-                        onClose();
-                      }else{
-                        setErrorMessage(object.message)
-                      }
-                    })
-                  }finally{
-                    setIsLoading(false);
-                  }
-                  }}>
-                  {isLoading ? <Spinner color="default" size="sm"/> : "Delete"}
+                    setIsLoading(true);
+                    try{
+                        await deleteDepartment(department.DepartmentId).then((object: any) => {
+                            if(object.statusCode == 200){
+                                onClose();
+                                setDepartment(defaultDepartment);
+                                fetchDepartments(facultyId).then((object: any) => {
+                                    setDepartments(object.data || []);
+                                })
+                                setErrorMessage("");
+                                }else{
+                                setErrorMessage(object.message)
+                                }
+                        })
+                    }finally{
+                        setIsLoading(false);
+                    }
+                }}>
+                    {isLoading ? <Spinner color="default" size="sm"/> : "Delete"}
                 </Button>
               </ModalFooter>
             </>
           )}
         </ModalContent>
       </Modal>
+      <Select
+        label= "Faculty"
+        variant="bordered"
+        placeholder="Select faculty"
+        errorMessage={isValid || !touched ? "" : "You need to select a faculty"}
+        isInvalid={isValid || !touched ? false: true}
+        selectedKeys={[facultyId]}
+        className="max-w-[44%] mb-7"
+        onChange={(e) => {
+          setFacultyId(e.target.value);
+          setIsFetchingDepartment(true);
+          fetchDepartments(e.target.value).then((object: any) => {
+            setDepartments(object.data || []);
+          });
+          setIsFetchingDepartment(false);
+        }}
+        onClose={() => setTouched(true)}
+        value={facultyId}
+        style={{ marginBottom: "2rem" }}
+      >
+        {faculties.map((faculty) => (
+          <SelectItem key={faculty.key}>
+            {faculty.label}
+          </SelectItem>
+         ))}
+      </Select>
       <Table
         aria-label="Example table with custom cells, pagination and sorting"
         isHeaderSticky
@@ -473,16 +465,16 @@ const filteredItems = React.useMemo(() => {
           {(column) => (
             <TableColumn
               key={column.uid}
-              align={column.uid === "Actions" ? "center" : "start"}
+              align={column.uid === "actions" ? "center" : "start"}
               allowsSorting={column.sortable}
             >
               {column.name}
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody isLoading={isFetchingUsers} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No users found"} items={sortedItems}>
+        <TableBody isLoading={isFetchingDepartment} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No departments found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.UserId}>
+            <TableRow key={item.DepartmentId}>
               {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
             </TableRow>
           )}
@@ -492,4 +484,4 @@ const filteredItems = React.useMemo(() => {
   );
 }
 
-export default ManageUsers;
+export default ManageDepartments;

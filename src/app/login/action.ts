@@ -22,16 +22,16 @@ export const useLogin = () => {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
     }
-
-    const userData = await getUserData(data.email)
-    console.log(userData)
-    dispatch(setUserData(userData.user as userState))
   
     const { error } = await supabase.auth.signInWithPassword(data)
   
     if (error) {
       return {isError: true, message: error.message, statusCode: error.status}
     }
+
+    const userData = await getUserData(data.email)
+    console.log(userData)
+    dispatch(setUserData(userData.user as userState))
   
     window.location.href = '/'
     return {isError: false, message: '', statusCode: 200}

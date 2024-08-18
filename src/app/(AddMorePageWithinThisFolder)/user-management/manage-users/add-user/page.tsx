@@ -5,14 +5,16 @@ import "@/components/ui/component.css"
 import PageContainer from '@/components/ui/container/page-container';
 import { useEffect, useState } from "react";
 import { Input } from '@nextui-org/react';
-import { MsStaff, MsStudent, createStaff, createStudent} from '@/app/api/user-management/manage-users';
+import { createStaff, createStudent, fetchDepartments, createLecturerCourse } from '@/app/api/user-management/manage-users';
+import { fetchCourses } from "@/app/api/enrollment/manage-courses";
 import { Button, DatePicker, Select, SelectItem} from "@nextui-org/react";
-import { fetchRoles, MsRole, SelectList } from "@/app/api/user-management/manage-roles";
+import { fetchRoles } from "@/app/api/user-management/manage-roles";
 import { parseDate } from "@internationalized/date";
 import { generateGUID } from "../../../../../../utils/boilerplate-function";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
+import { MsRole, MsStaff, MsStudent, SelectList, LecturerCourse } from "@/app/api/data-model";
 // components
 
 const AddRole = () => {
@@ -24,12 +26,22 @@ const AddRole = () => {
   const [userBirthDate, setUserBirthDate] = useState(parseDate(today));
   const [userAddress, setUserAddress] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
+  const [userStudyProgram, setUserStudyProgram] = useState<string>("");
   const [isLoading, setLoadingStatus] = useState<boolean>(false);
   const [touched, setTouched] = React.useState(false);
+  const [touched2, setTouched2] = React.useState(false);
+  const [touched3, setTouched3] = React.useState(false);
+  const [courses, setCourse] = useState(new Set([]));
 
   const isRoleValid = userRole !== ""
+  const isCourseValid = courses.size !== 0
+  const isStudyProgramValid = userStudyProgram !== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
   const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? false : true
+
+  const handleSelectionChange = (e: any) => {
+    setCourse(new Set(e.target.value.split(",")));
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -49,8 +61,30 @@ const AddRole = () => {
             UpdatedDate: new Date(0).toISOString(),
             ActiveFlag: true,
         }
+
         createStaff(staff).then((res) => {
             if(res.statusCode == 200){
+                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                    const coursesArray = Array.from(courses).filter(item => item !== "")
+                    for(let i = 0; i < coursesArray.length; i++){
+                        let lecturerCourse: LecturerCourse = {
+                            StaffId: staff.StaffId,
+                            CourseId: coursesArray[i],
+                            CreatedDate: new Date().toISOString(),
+                            CreatedBy: userData.name,
+                            UpdatedDate: new Date(0).toISOString(),
+                            UpdatedBy: null,
+                            ActiveFlag: true
+                        }
+                        createLecturerCourse(lecturerCourse).then((res2) => {
+                            if(res2.statusCode != 200){
+                                alert(res2.message)
+                                setLoadingStatus(false)
+                                return;
+                            }
+                        })
+                    }
+                }
                 setLoadingStatus(false)
                 window.location.href = `/user-management/manage-users`
             }else{
@@ -68,6 +102,7 @@ const AddRole = () => {
             AcadYear: new Date().getFullYear().toString(),
             RoleId: userRole,
             LearningStyleId: "98ef05c8-121a-4821-a54b-9d3ac92f7292",
+            DepartmentId: userStudyProgram,
             CreatedBy: userData.name,
             CreatedDate: new Date().toISOString(),
             UpdatedBy: null,
@@ -86,8 +121,10 @@ const AddRole = () => {
     }
   }
 
-  const [dropdownList, setDropdownList] = React.useState<SelectList[]>([])
+  const [departmentDropdownList, setDepartmentDropdownList] = React.useState<SelectList[]>([])
+  const [roleDropdownList, setRoleDropdownList] = React.useState<SelectList[]>([])
   const [roles, setRoles] = React.useState<MsRole[]>([])
+  const [courseDropdownList, setCourseDropdownList] = React.useState<SelectList[]>([])
   useEffect(() => {
     dispatch(loadUserFromStorage())
     fetchRoles().then((object: any) => {
@@ -98,9 +135,27 @@ const AddRole = () => {
                 roleCategoryId: z.RoleCategoryId
             }
         })
-        setDropdownList(res)
+        setRoleDropdownList(res)
         setRoles(object.data || [])
     });
+    fetchDepartments().then((object: any) => {
+        const res = object.data.map((z: any) => {
+            return{
+                key: z.DepartmentId,
+                label: z.DepartmentName,
+            }
+        })
+        setDepartmentDropdownList(res)
+    })
+    fetchCourses().then((object: any) => {
+        const res = object.data.map((z: any) => {
+            return{
+                key: z.CourseId,
+                label: z.CourseName
+            }
+        })
+        setCourseDropdownList(res)
+    })
   }, [dispatch]);
 
   return (
@@ -108,7 +163,7 @@ const AddRole = () => {
       <Box component="div">
         <div>
           <form className='ml-6' onSubmit={handleSubmit}>
-            <h2 style={{ fontSize: "22px", marginBottom: "20px", fontWeight: "600"}}>General Details</h2>
+            <h2 style={{ fontSize: "22px", marginBottom: "20px", fontWeight: "600"}}>Add Details</h2>
             <Grid container spacing={2} className="mt-0.5">
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
@@ -170,17 +225,67 @@ const AddRole = () => {
                       isInvalid={isRoleValid || !touched ? false: true}
                       selectedKeys={[userRole]}
                       className="w-full sm:max-w-[80%]"
-                      onChange={(e) => {setUserRole(e.target.value)}}
+                      onChange={(e) => {setUserRole(e.target.value); console.log(e.target.value)}}
                       onClose={() => setTouched(true)}
                       value={userRole}
                     >
-                      {dropdownList.map((roles) => (
+                      {roleDropdownList.map((roles: SelectList) => (
                         <SelectItem key={roles.key}>
                           {roles.label}
                         </SelectItem>
                       ))}
                     </Select>
                 </Grid>
+                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                    <>
+                        <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                            <Select
+                            required
+                            label= "Study Program"
+                            variant="bordered"
+                            placeholder="Select student study program"
+                            errorMessage={ isStudyProgramValid || !touched2 ? "" : "You need to select a study program"}
+                            isInvalid={ isStudyProgramValid || !touched2 ? false: true}
+                            selectedKeys={[userStudyProgram]}
+                            className="w-full sm:max-w-[80%]"
+                            onChange={(e) => {setUserStudyProgram(e.target.value)}}
+                            onClose={() => setTouched2(true)}
+                            value={userStudyProgram}
+                            >
+                            {departmentDropdownList.map((major: SelectList) => (
+                                <SelectItem key={major.key}>
+                                {major.label}
+                                </SelectItem>
+                            ))}
+                            </Select>
+                        </Grid>
+                    </>
+                )}
+                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                    <>
+                        <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                            <Select
+                                required
+                                label= "Course"
+                                selectionMode="multiple"
+                                variant="bordered"
+                                placeholder="Select course"
+                                errorMessage={ isCourseValid || !touched3 ? "" : "You need to select a course"}
+                                isInvalid={ isCourseValid || !touched3 ? false: true}
+                                selectedKeys={courses}
+                                className="w-full sm:max-w-[80%]"
+                                onChange={handleSelectionChange}
+                                onClose={() => setTouched3(true)}
+                                >
+                                {courseDropdownList.map((course: SelectList) => (
+                                    <SelectItem key={course.key}>
+                                    {course.label}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </Grid>
+                    </>
+                )}
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                 </Grid>
                 <Grid item xs={9} sm={9} md={9} lg={9} className="mt-4">

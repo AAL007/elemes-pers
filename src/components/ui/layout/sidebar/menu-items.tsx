@@ -1,10 +1,15 @@
 import { iconClasses } from "@mui/material";
 import {
+  IconAffiliate,
   IconBook2,
+  IconCertificate,
+  IconCertificate2,
   IconLayoutDashboard,
   IconSchool,
   IconSettings,
   IconUserPlus,
+  IconBooks,
+  IconMicroscope,
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -46,11 +51,39 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
+    title: "Manage Courses",
+    icon: IconCertificate2,
+    href: "/enrollment/manage-courses",
+    roles: ["admin"],
+  },
+  {
+    id: uniqueId(),
+    title: "Manage Faculties",
+    icon: IconMicroscope,
+    href: "/enrollment/manage-faculties",
+    roles: ["admin"],
+  },
+  {
+    id: uniqueId(),
+    title: "Manage Departments",
+    icon: IconBooks,
+    href: "/enrollment/manage-departments",
+    roles: ["admin"],
+  },
+  {
+    id: uniqueId(),
     title: "Manage Classes",
     icon: IconBook2,
     href: "/enrollment/manage-classes",
     roles: ["admin"],
   },
+  // {
+  //   id: uniqueId(),
+  //   title: "Pair Courses",
+  //   icon: IconAffiliate,
+  //   href: "/enrollment/pair-courses",
+  //   roles: ["admin"],
+  // },
   {
     id: uniqueId(),
     title: "Manage Students",

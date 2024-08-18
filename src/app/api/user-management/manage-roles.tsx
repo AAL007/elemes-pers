@@ -1,22 +1,7 @@
 'use client'
 
 import { createClient } from "../../../../utils/supabase/client"
-
-export type MsRole = {
-    RoleId: string;
-    RoleName: string;
-    RoleCategoryId: string;
-    CreatedBy: string;
-    CreatedDate: any;
-    UpdatedBy: string | null;
-    UpdatedDate: any;
-    ActiveFlag: boolean;
-}
-
-export type SelectList = {
-    key: string;
-    label: string;
-}
+import { MsRole } from "../../api/data-model"
 
 const supabase = createClient()
 

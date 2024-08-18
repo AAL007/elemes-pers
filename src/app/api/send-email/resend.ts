@@ -5,15 +5,13 @@ import { NextResponse } from 'next/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-let email: string = 'alfonsus.adrian@elemes.site'
-
-export async function sendEmailNotification() {
+export async function sendEmailNotification(emailAddress: string, password: string) {
   try {
     const { data, error } = await resend.emails.send({
       from: 'noreply@elemes.site',
-      to: ['alfonsus131@gmail.com'],
+      to: [emailAddress],
       subject: 'Welcome Aboard!',
-      react: EmailTemplate({ email}),
+      react: EmailTemplate({ email: emailAddress, password}),
       text: '',
     });
 

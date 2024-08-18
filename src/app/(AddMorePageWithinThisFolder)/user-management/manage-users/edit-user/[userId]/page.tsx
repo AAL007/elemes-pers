@@ -11,12 +11,15 @@ import {
     Button,
     DatePicker
 } from '@nextui-org/react';
-import { MsStaff, MsStudent, updateStaff, updateStudent, fetchStaff, fetchStudent} from '@/app/api/user-management/manage-users';
+import { updateStaff, updateStudent, fetchStaff, fetchStudent, createLecturerCourse, deleteLecturerCourse, fetchLecturerCoursesByStaffId} from '@/app/api/user-management/manage-users';
 import { parseDate } from '@internationalized/date';
-import { SelectList, fetchRoles } from '@/app/api/user-management/manage-roles';
+import { fetchRoles } from '@/app/api/user-management/manage-roles';
 import { RootState } from '@/lib/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { loadUserFromStorage } from '@/lib/user-slice';
+import { MsStaff, MsStudent, SelectList, MsRole, LecturerCourse } from '@/app/api/data-model';
+import { fetchDepartments } from '@/app/api/user-management/manage-users';
+import { fetchCourses } from '@/app/api/enrollment/manage-courses';
 
 // components
 
@@ -43,6 +46,7 @@ var defaultStaff: MsStaff = {
     AcadYear: "",
     RoleId: "",
     LearningStyleId: "",
+    DepartmentId: "",
     CreatedBy: "",
     CreatedDate: new Date().toISOString(),
     UpdatedBy: null,
@@ -64,10 +68,20 @@ const EditRole = ({params} : {params : {userId: string}}) => {
   const [isStaff, setIsStaff] = useState<boolean>(false);
   const [isLoading, setLoadingStatus] = useState<boolean>(false);
   const [touched, setTouched] = React.useState(false);
+  const [touched2, setTouched2] = React.useState(false);
+  const [touched3, setTouched3] = React.useState(false);
+  const [courses, setCourse] = useState(new Set<string>([]));
+
+  const isCourseValid = courses.size !== 0
+  const isStudyProgramValid = student.DepartmentId !== ""
 
   const isRoleValid = userRole !== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
   const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? false : true
+
+  const handleSelectionChange = (e: any) => {
+    setCourse(new Set(e.target.value.split(",")));
+  };
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -88,8 +102,41 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             UpdatedDate: new Date().toISOString(),
             ActiveFlag: staff.ActiveFlag,
         }
-        updateStaff(updateStaffData).then((res) => {
+        updateStaff(updateStaffData).then(async(res) => {
             if(res.statusCode == 200){
+                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                    const coursesArray = Array.from(courses).filter(item => item !== "")
+                    const addedCourse = coursesArray.filter(item => !initialLecturerCourse.includes(item))
+                    const removedCourse = initialLecturerCourse.filter(item => !coursesArray.includes(item))
+                    for(let i = 0; i < addedCourse.length; i++){
+                        let lecturerCourse: LecturerCourse = {
+                            StaffId: staff.StaffId,
+                            CourseId: addedCourse[i],
+                            CreatedDate: new Date().toISOString(),
+                            CreatedBy: userData.name,
+                            UpdatedDate: new Date(0).toISOString(),
+                            UpdatedBy: null,
+                            ActiveFlag: true
+                        }
+                        await createLecturerCourse(lecturerCourse).then((res2) => {
+                            if(res2.statusCode != 200){
+                                alert(res2.message)
+                                setLoadingStatus(false)
+                                return;
+                            }
+                        })
+                    }
+                    for(let i = 0; i < removedCourse.length; i++){
+                        console.log(removedCourse[i])
+                        await deleteLecturerCourse(staff.StaffId, removedCourse[i]).then((res2) => {
+                            if(res2.statusCode != 200){
+                                alert(res2.message)
+                                setLoadingStatus(false)
+                                return;
+                            }
+                        })
+                    }
+                }
                 setLoadingStatus(false)
                 window.location.href = `/user-management/manage-users`
             }else{
@@ -107,9 +154,10 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             AcadYear: student?.AcadYear,
             RoleId: userRole,
             LearningStyleId: student?.LearningStyleId,
-            CreatedBy: userData.name,
+            DepartmentId: student?.DepartmentId,
+            CreatedBy: student.CreatedBy,
             CreatedDate: student.CreatedDate,
-            UpdatedBy: "Alfonsus Adrian",
+            UpdatedBy: userData.name,
             UpdatedDate: new Date().toISOString(),
             ActiveFlag: student?.ActiveFlag,
         }
@@ -125,7 +173,10 @@ const EditRole = ({params} : {params : {userId: string}}) => {
     }
   }
 
-  const [dropdownList, setDropdownList] = React.useState<SelectList[]>([])
+  const [departmentDropdownList, setDepartmentDropdownList] = React.useState<SelectList[]>([])
+  const [roleDropdownList, setRoleDropdownList] = React.useState<SelectList[]>([])
+  const [courseDropdownList, setCourseDropdownList] = React.useState<SelectList[]>([])
+  const [initialLecturerCourse, setInitialLecturerCourse] = React.useState<string[]>([])
   useEffect(() => {
     dispatch(loadUserFromStorage())
     fetchRoles().then((object: any) => {
@@ -136,7 +187,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                 roleCategoryId: z.RoleCategoryId
             }
         })
-        setDropdownList(res)
+        setRoleDropdownList(res)
     });
     fetchStaff(params.userId).then((res) => {
         if(res.statusCode != 200){
@@ -161,7 +212,36 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             setUserBirthDate(parseDate(res.data.BirthDate.split('T')[0]))
             setIsStaff(true)
             setStaff(res.data)
+            if(res.data.RoleId == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                fetchLecturerCoursesByStaffId(params.userId).then((res3) => {
+                    if(res3.statusCode != 200){
+                        alert(res3.message)
+                    }else{
+                        const courseIdList = res3.data.map((z: LecturerCourse) => z.CourseId)
+                        setCourse(new Set(courseIdList))
+                        setInitialLecturerCourse(courseIdList)
+                    }
+                })
+            }
         }
+    })
+    fetchDepartments().then((object: any) => {
+        const res = object.data.map((z: any) => {
+            return{
+                key: z.DepartmentId,
+                label: z.DepartmentName,
+            }
+        })
+        setDepartmentDropdownList(res)
+    })
+    fetchCourses().then((object: any) => {
+        const res = object.data.map((z: any) => {
+            return{
+                key: z.CourseId,
+                label: z.CourseName
+            }
+        })
+        setCourseDropdownList(res)
     })
   }, [dispatch]);
 
@@ -170,7 +250,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
       <Box component="div">
         <div>
         <form className='ml-6' onSubmit={handleSubmit}>
-            <h2 style={{ fontSize: "22px", marginBottom: "20px", fontWeight: "600"}}>General Details</h2>
+            <h2 style={{ fontSize: "22px", marginBottom: "20px", fontWeight: "600"}}>Edit Details</h2>
             <Grid container spacing={2} className="mt-0.5">
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
@@ -236,13 +316,63 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                       onClose={() => setTouched(true)}
                       value={userRole}
                     >
-                      {dropdownList.map((roles) => (
+                      {roleDropdownList.map((roles) => (
                         <SelectItem key={roles.key}>
                           {roles.label}
                         </SelectItem>
                       ))}
                     </Select>
                 </Grid>
+                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                    <>
+                        <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                            <Select
+                            required
+                            label= "Study Program"
+                            variant="bordered"
+                            placeholder="Select student study program"
+                            errorMessage={ isStudyProgramValid || !touched2 ? "" : "You need to select a study program"}
+                            isInvalid={ isStudyProgramValid || !touched2 ? false: true}
+                            selectedKeys={[student.DepartmentId]}
+                            className="w-full sm:max-w-[80%]"
+                            onChange={(e) => {setStudent({...student, DepartmentId: e.target.value})}}
+                            onClose={() => setTouched2(true)}
+                            value={student.DepartmentId}
+                            >
+                            {departmentDropdownList.map((major: SelectList) => (
+                                <SelectItem key={major.key}>
+                                {major.label}
+                                </SelectItem>
+                            ))}
+                            </Select>
+                        </Grid>
+                    </>
+                )}
+                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                    <>
+                        <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                            <Select
+                                required
+                                label= "Course"
+                                selectionMode="multiple"
+                                variant="bordered"
+                                placeholder="Select course"
+                                errorMessage={ isCourseValid || !touched3 ? "" : "You need to select a course"}
+                                isInvalid={ isCourseValid || !touched3 ? false: true}
+                                selectedKeys={courses}
+                                className="w-full sm:max-w-[80%]"
+                                onChange={handleSelectionChange}
+                                onClose={() => setTouched3(true)}
+                                >
+                                {courseDropdownList.map((course: SelectList) => (
+                                    <SelectItem key={course.key}>
+                                    {course.label}
+                                    </SelectItem>
+                                ))}
+                            </Select>
+                        </Grid>
+                    </>
+                )}
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                 </Grid>
                 <Grid item xs={9} sm={9} md={9} lg={9} className="mt-4">
