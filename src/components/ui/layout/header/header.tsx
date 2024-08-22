@@ -6,6 +6,11 @@ import Link from 'next/link';
 // components
 import Profile from './profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from "@/lib/store";
+import { loadUserFromStorage } from "@/lib/user-slice";
+import { useEffect } from 'react';
+import { fetchAdministratorNotification } from '@/app/api/home/dashboard';
 
 interface ItemType {
   toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
@@ -15,7 +20,26 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
 
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
+  const dispatch = useDispatch();
+  const userData = useSelector((state: RootState) => state.user);
+  const [messages, setMessages] = React.useState<{message: string, category: string}[]>([]);
 
+  useEffect(() => {
+    dispatch(loadUserFromStorage())
+    const administratorNotification = async () => {
+      const res = await fetchAdministratorNotification();
+      if(!res.success){
+        // console.log(res.message);
+        alert(res.message);
+        return;
+      }
+      const filteredData = res.data.filter(item => item != "");
+      // console.log(filteredData);
+      setMessages(filteredData as {message: string, category: string}[]);
+    }
+
+    administratorNotification();
+  }, [dispatch])
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',
@@ -63,40 +87,16 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
             </IconButton>
           </DropdownTrigger>
           <DropdownMenu variant="faded" aria-label="Dropdown menu with description">
-            <DropdownItem
-              key="notif1"
-              // shortcut="⌘N"
-              showDivider
-              description="Description 1"
-            >
-              Notif 1
-            </DropdownItem>
-            <DropdownItem
-              key="notif2"
-              // shortcut="⌘C"
-              showDivider
-              description="Description 2"
-            >
-              Notif 2
-            </DropdownItem>
-            <DropdownItem
-              key="notif3"
-              // shortcut="⌘⇧E"
-              showDivider
-              description="Description 3"
-            >
-              Notif 3
-            </DropdownItem>
-            <DropdownItem
-              key="notif4"
-              // className="text-danger"
-              color="danger"
-              // shortcut="⌘⇧D"
-              // startContent="🔥"
-              description="Description 4"
-            >
-              Notif 4
-            </DropdownItem>
+            {messages.map((message, index) => (
+              <DropdownItem
+                key={index}
+                // shortcut="⌘N"
+                showDivider
+                description={message.message}
+              >
+                {message.category}
+              </DropdownItem>
+            ))}
           </DropdownMenu>
         </Dropdown>
 

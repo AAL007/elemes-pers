@@ -12,9 +12,17 @@ import {
 } from '@mui/lab';
 import { Link, Typography } from '@mui/material';
 
-const RecentTransactions = () => {
+interface RecentActivitiesProps {
+  data: {
+    activity: string;
+    message: string;
+    time: string;
+  }[]
+}
+
+const RecentActivities : React.FC<RecentActivitiesProps> = ({data}) => {
   return (
-    <DashboardCard title="Recent Transactions">
+    <DashboardCard title="Recent Activities">
       <>
         <Timeline
           className="theme-timeline"
@@ -34,7 +42,20 @@ const RecentTransactions = () => {
             },
           }}
         >
-          <TimelineItem>
+          {data.map((item, index) => {
+            const isLastItem = index === data.length - 1;
+            return (
+              <TimelineItem>
+              <TimelineOppositeContent>{item.time}</TimelineOppositeContent>
+              <TimelineSeparator>
+                <TimelineDot color={item.activity == "Create" ? "success" : item.activity == "Update" ? "primary" : "error"} variant="outlined" />
+                {!isLastItem && <TimelineConnector />}
+              </TimelineSeparator>
+              <TimelineContent className={isLastItem ? 'mb-10' : ''}>{item.message}</TimelineContent>
+            </TimelineItem>
+            )
+            })}
+          {/* <TimelineItem>
             <TimelineOppositeContent>09:30 am</TimelineOppositeContent>
             <TimelineSeparator>
               <TimelineDot color="primary" variant="outlined" />
@@ -92,11 +113,11 @@ const RecentTransactions = () => {
               <TimelineDot color="success" variant="outlined" />
             </TimelineSeparator>
             <TimelineContent>Payment Received</TimelineContent>
-          </TimelineItem>
+          </TimelineItem> */}
         </Timeline>
       </>
     </DashboardCard>
   );
 };
 
-export default RecentTransactions;
+export default RecentActivities;
