@@ -5,9 +5,14 @@ import DashboardCard from './dashboard-card';
 import dynamic from "next/dynamic";
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
+interface BarChartProps {
+    categories: string[];
+    data: number[];
+    dropdownList: string[];
+    title: string;
+}
 
-const SalesOverview = () => {
-
+const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, title}) => {
     // select
     const [month, setMonth] = React.useState('1');
 
@@ -68,7 +73,7 @@ const SalesOverview = () => {
             tickAmount: 4,
         },
         xaxis: {
-            categories: ['16/08', '17/08', '18/08', '19/08', '20/08', '21/08', '22/08', '23/08'],
+            categories: categories,
             axisBorder: {
                 show: false,
             },
@@ -80,18 +85,18 @@ const SalesOverview = () => {
     };
     const seriescolumnchart: any = [
         {
-            name: 'Eanings this month',
-            data: [355, 390, 300, 350, 390, 180, 355, 390],
+            name: {title},
+            data: data,
         },
-        {
-            name: 'Expense this month',
-            data: [280, 250, 325, 215, 250, 310, 280, 250],
-        },
+        // {
+        //     name: 'Expense this month',
+        //     data: [280, 250, 325, 215, 250, 310, 280, 250],
+        // },
     ];
 
     return (
 
-        <DashboardCard title="Sales Overview" action={
+        <DashboardCard title={title} action={
             <Select
                 labelId="month-dd"
                 id="month-dd"
@@ -99,9 +104,10 @@ const SalesOverview = () => {
                 size="small"
                 onChange={handleChange}
             >
-                <MenuItem value={1}>March 2023</MenuItem>
-                <MenuItem value={2}>April 2023</MenuItem>
-                <MenuItem value={3}>May 2023</MenuItem>
+                {dropdownList.map((x: string, index: number) => {
+                    index++;
+                    return <MenuItem value={index}>{x}</MenuItem>
+                })}
             </Select>
         }>
             <Chart
@@ -114,4 +120,4 @@ const SalesOverview = () => {
     );
 };
 
-export default SalesOverview;
+export default BarChart;

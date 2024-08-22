@@ -1,61 +1,26 @@
-'use client'
-
+'use server'
 import { createClient } from "../../../../utils/supabase/client"
 import { generatePassword } from "../../../../utils/boilerplate-function";
-
-export type MsStaff = {
-    StaffId: string;
-    StaffName: string;
-    StaffEmail: string;
-    BirthDate: any;
-    Address: string;
-    RoleId: string;    
-    CreatedBy: string;
-    CreatedDate: any;
-    UpdatedBy: string | null;
-    UpdatedDate: any;
-    ActiveFlag: boolean;
-}
-
-export type MsStudent = {
-    StudentId: string;
-    StudentName: string;
-    StudentEmail: string;
-    BirthDate: any;
-    Address: string;
-    AcadYear: string;
-    RoleId: string;
-    LearningStyleId: string;
-    CreatedBy: string;
-    CreatedDate: any;
-    UpdatedBy: string | null;
-    UpdatedDate: any;
-    ActiveFlag: boolean;
-}
-
-export type UserList = {
-    UserId: string;
-    UserName: string;
-    UserEmail: string;
-    UserRole: string;
-    CreatedBy: string;
-    UpdatedBy: string;
-    ActiveFlag: boolean;
-    IsStaff: boolean;
-}
+import { MsStudent, MsStaff, LecturerCourse } from "../../api/data-model"
+import { createClientAdmin } from "../../../../utils/supabase/server";
+import { sendEmailNotification } from "../send-email/resend";
 
 const supabase = createClient()
+const supabaseAdmin = createClientAdmin()
 
 async function signUpUser (email: string, birthDate: any){
     const password = generatePassword(birthDate);
-    const { data, error: authError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
         email: email,
-        password: password
+        password: password,
+        email_confirm: true
     })
 
-    if(authError){
-        return {data: [], statusCode: 400, message: authError.message}
+    if(signUpError){
+        return {data: [], statusCode: 400, message: signUpError.message}
     }
+
+    await sendEmailNotification(email, password)
 
     return {data, statusCode: 200, message: 'User created successfully!'}
 }
@@ -63,15 +28,6 @@ async function signUpUser (email: string, birthDate: any){
 export async function createStudent(student: MsStudent){
     const { data, error } = await supabase.from('MsStudent').select().eq('StudentEmail', student.StudentEmail).neq('StudentId', student.StudentId).single()
     if(error){
-        const { data, error } = await supabase.from('MsStudent').insert(student)
-        if (error){
-            let object = {
-                data: [],
-                statusCode: 400,
-                message: error.message
-            }
-            return object;
-        }
         const signUp = await signUpUser(student.StudentEmail, student.BirthDate)
         if(signUp.statusCode == 400){
             let object = {
@@ -81,6 +37,17 @@ export async function createStudent(student: MsStudent){
             }
             return object;
         }
+
+        const { data, error } = await supabase.from('MsStudent').insert(student)
+        if (error){
+            let object = {
+                data: [],
+                statusCode: 400,
+                message: error.message
+            }
+            return object;
+        }
+
         let object = {
             data: data,
             statusCode: 200,
@@ -96,10 +63,10 @@ export async function createStudent(student: MsStudent){
     return object
 }
 
-export async function createStaff(staff: MsStaff){
-    const { data, error } = await supabase.from('MsStaff').select().eq('StaffEmail', staff.StaffEmail).neq('StaffId', staff.StaffId).single()
+export async function createLecturerCourse(lecturerCourse: LecturerCourse){
+    const { data, error } = await supabase.from('LecturerCourse').select().eq('StaffId', lecturerCourse.StaffId).eq('CourseId', lecturerCourse.CourseId).single()
     if(error){
-        const { data, error } = await supabase.from('MsStaff').insert(staff)
+        const { data, error } = await supabase.from('LecturerCourse').insert(lecturerCourse)
         if (error){
             let object = {
                 data: [],
@@ -108,6 +75,25 @@ export async function createStaff(staff: MsStaff){
             }
             return object;
         }
+
+        let object = {
+            data: data,
+            statusCode: 200,
+            message: 'Lecturer course added successfully!'
+        }
+        return object;
+    }
+    let object = {
+        data: [],
+        statusCode: 400,
+        message: 'This lecturer course is already exist!'
+    }
+    return object
+}
+
+export async function createStaff(staff: MsStaff){
+    const { data, error } = await supabase.from('MsStaff').select().eq('StaffEmail', staff.StaffEmail).neq('StaffId', staff.StaffId).single()
+    if(error){
         const signUp = await signUpUser(staff.StaffEmail, staff.BirthDate)
         if(signUp.statusCode == 400){
             let object = {
@@ -117,6 +103,17 @@ export async function createStaff(staff: MsStaff){
             }
             return object;
         }
+        
+        const { data, error } = await supabase.from('MsStaff').insert(staff)
+        if (error){
+            let object = {
+                data: [],
+                statusCode: 400,
+                message: error.message
+            }
+            return object;
+        }
+
         let object = {
             data: data,
             statusCode: 200,
@@ -204,6 +201,24 @@ export async function deleteStaff(staffId: string) {
     return object;
 }
 
+export async function deleteLecturerCourse(staffId: string, courseId: string) {
+    const { data, error } = await supabase.from('LecturerCourse').delete().eq('StaffId', staffId).eq('CourseId', courseId)
+    if (error){
+        let object = {
+            data: [],
+            statusCode: 400,
+            message: error.message
+        }
+        return object;
+    }
+    let object = {
+        data: data,
+        statusCode: 200,
+        message: 'Lecturer course deleted successfully!'
+    }
+    return object;
+}
+
 export async function fetchStudents() {
     const { data, error } = await supabase.from('MsStudent').select()
     if (error){
@@ -242,6 +257,26 @@ export async function fetchStaffs() {
     return object;
 }
 
+export async function fetchLecturerCoursesByStaffId(staffId: string) {
+    const { data, error } = await supabase.from('LecturerCourse').select().eq('StaffId', staffId)
+    if (error){
+        let object = {
+            data: [],
+            statusCode: 400,
+            message: error.message
+        }
+        return object;
+    };
+    
+    let object = {
+        data: data,
+        statusCode: 200,
+        message: 'Lecturer courses fetched successfully!'
+    }
+    return object;
+
+}
+
 export async function fetchStudent (studentId: string) {
     const { data, error } = await supabase.from('MsStudent').select().eq('StudentId', studentId).single()
     if (error){
@@ -256,5 +291,23 @@ export async function fetchStaff (staffId: string) {
     if (error){
         return {data, statusCode: 400, message: 'Failed'};
     }
+    return {data, statusCode: 200, message: 'Success'};
+}
+
+export async function fetchFaculties (){
+    const { data, error } = await supabase.from('MsFaculty').select()
+    if (error){
+        return {data: [], statusCode: 400, message: error.message}
+    }
+
+    return {data, statusCode: 200, message: 'Success'};
+}
+
+export async function fetchDepartments () {
+    const { data, error } = await supabase.from('Department').select()
+    if (error){
+        return {data: [], statusCode: 400, message: error.message}
+    }
+
     return {data, statusCode: 200, message: 'Success'};
 }

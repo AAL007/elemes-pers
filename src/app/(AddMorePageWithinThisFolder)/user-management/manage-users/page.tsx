@@ -36,8 +36,9 @@ import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { MsRole, fetchRoles } from "@/app/api/user-management/manage-roles";
-import { fetchStudents, fetchStaffs, deleteStaff, deleteStudent, UserList} from "@/app/api/user-management/manage-users";
+import { fetchRoles } from "@/app/api/user-management/manage-roles";
+import { fetchStudents, fetchStaffs, deleteStaff, deleteStudent } from "@/app/api/user-management/manage-users";
+import { UserList, MsRole } from "@/app/api/data-model";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -402,7 +403,7 @@ const filteredItems = React.useMemo(() => {
         isDismissable={false}
         isOpen={isOpen} 
         onOpenChange={() => {
-          setIsDelete(false);
+
           setErrorMessage("");
           onOpenChange()
         }}

@@ -87,7 +87,7 @@ export default function LoginPage() {
 
               <LabelInputContainer className="mb-4">
                 <Label htmlFor="password">Password</Label>
-                <PasswordInput id="password" name="password" placeholder="eleme5ddmmyyyy" required onChange={(e: any) => setPassword(e.target.value)}/>
+                <PasswordInput id="password" name="password" placeholder="el3mesdd/mm/yyyy" required onChange={(e: any) => setPassword(e.target.value)}/>
                 {isError ? <span style={{ fontSize: '11px', color: 'red' }}>{errorMessage}</span> : null}
               </LabelInputContainer>
       

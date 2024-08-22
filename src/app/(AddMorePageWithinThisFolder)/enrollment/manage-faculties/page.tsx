@@ -37,12 +37,12 @@ import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { fetchRoles, deleteRole, createRole, updateRole, fetchRoleCategories } from '../../../api/user-management/manage-roles';
+import { createFaculty, updateFaculty, deleteFaculty, fetchFaculties } from "@/app/api/enrollment/manage-faculties";
 import { generateGUID } from "../../../../../utils/boilerplate-function";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { MsRole, SelectList } from "@/app/api/data-model";
+import { MsFaculty } from "@/app/api/data-model";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -50,7 +50,7 @@ const statusColorMap: Record<string, ChipProps["color"]>  = {
 };
 
 const columns = [
-  {name: "ROLE NAME", uid: "RoleName", sortable: true},
+  {name: "FACULTY NAME", uid: "FacultyName", sortable: true},
   {name: "CREATED BY", uid: "CreatedBy"},
   {name: "UPDATED BY", uid: "UpdatedBy"},
   {name: "STATUS", uid: "ActiveFlag", sortable: true},
@@ -62,10 +62,9 @@ const statusOptions = [
   {name: "Inactive", uid: "inactive"},
 ];
 
-const defaultRole : MsRole = {
-  RoleId: "",
-  RoleName: "",
-  RoleCategoryId: "",
+const defaultFaculty : MsFaculty = {
+  FacultyId: "",
+  FacultyName: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -73,13 +72,13 @@ const defaultRole : MsRole = {
   ActiveFlag: false,
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["RoleName", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
+const INITIAL_VISIBLE_COLUMNS = ["FacultyName", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const ManageRoles = () => {
+const ManageFaculties = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
   const [filterValue, setFilterValue] = React.useState("");
@@ -88,42 +87,27 @@ const ManageRoles = () => {
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "RoleName",
+    column: "FacultyName",
     direction: "ascending",
   });
-  const [isFetchingRoles, setIsFetchingRoles] = React.useState(true);
+  const [isFetchingFaculties, setIsFetchingFaculties] = React.useState(true);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isEdit, setIsEdit] = React.useState(false);
   const [isDelete, setIsDelete] = React.useState(false);
   const [isCreate, setIsCreate] = React.useState(false);
-  const [roleId, setRoleId] = React.useState("");
-  let [role, setRole] = React.useState<MsRole | any>(defaultRole);
+  const [facultyId, setFacultyId] = React.useState("");
+  let [faculty, setFaculty] = React.useState<MsFaculty | any>(defaultFaculty);
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [value, setValue] = React.useState("");
-  const [touched, setTouched] = React.useState(false);
-  const [roleCategories, setRoleCategories] = React.useState<SelectList[]>([])
 
-  const isValid = value !== ""
-
-  const [roles, setRoles] = React.useState<MsRole[]>([]);
+  const [faculties, setFaculties] = React.useState<MsFaculty[]>([]);
   useEffect(() => {
     dispatch(loadUserFromStorage());
-    setIsFetchingRoles(true);
-    fetchRoles().then((object: any) => {
-      setRoles(object.data || []);
-    });
-    fetchRoleCategories().then((object: any) => {
-      const roleCategories = object.data.map((z: any) => {
-        return{
-          key: z.RoleCategoryId,
-          label: z.RoleCategoryName
-        }
-      })
-      setRoleCategories(roleCategories)
-      console.log(roleCategories)
+    setIsFetchingFaculties(true);
+    fetchFaculties().then((object: any) => {
+        setFaculties(object.data || []);
     })
-    setIsFetchingRoles(false);
+    setIsFetchingFaculties(false);
   }, [dispatch]);
 
   const [page, setPage] = React.useState(1);
@@ -137,21 +121,21 @@ const ManageRoles = () => {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...roles];
+    let filteredFaculties = [...faculties];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.RoleName.toLowerCase().includes(filterValue.toLowerCase()),
+      filteredFaculties = filteredFaculties.filter((faculty) =>
+        faculty.FacultyName.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.ActiveFlag ? "active" : "inactive"),
+      filteredFaculties = filteredFaculties.filter((faculty) =>
+        Array.from(statusFilter).includes(faculty.ActiveFlag ? "active" : "inactive"),
       );
     }
 
-    return filteredUsers;
-  }, [roles, filterValue, statusFilter]);
+    return filteredFaculties;
+  }, [faculties, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -164,56 +148,56 @@ const ManageRoles = () => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof MsRole];
-      const second = b[sortDescriptor.column as keyof MsRole];
+      const first = a[sortDescriptor.column as keyof MsFaculty];
+      const second = b[sortDescriptor.column as keyof MsFaculty];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((role: MsRole, columnKey: React.Key) => {
-    const cellValue = role[columnKey as keyof MsRole];
+  const renderCell = React.useCallback((faculty: MsFaculty, columnKey: React.Key) => {
+    const cellValue = faculty[columnKey as keyof MsFaculty];
 
     switch (columnKey) {
-      case "RoleName":
+      case "ClassName":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{role.RoleName}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{faculty.FacultyName}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{role.CreatedBy}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{faculty.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
               {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
-              <p className="text-bold text-tiny capitalize text-default-400">{role.UpdatedBy ?? "N/A"}</p>
+              <p className="text-bold text-tiny capitalize text-default-400">{faculty.UpdatedBy ?? "N/A"}</p>
             </div>
           );
       case "ActiveFlag":
         return (
-          <Chip className="capitalize" color={statusColorMap[role.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
-            {role.ActiveFlag ? "active" : "inactive"}
+          <Chip className="capitalize" color={statusColorMap[faculty.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
+            {faculty.ActiveFlag ? "active" : "inactive"}
           </Chip>
         );
       case "Actions":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip content="Edit Role">
+            <Tooltip content="Edit Faculty">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setValue(role.RoleCategoryId); setRoleId(role.RoleId); setRole(role); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setFacultyId(faculty.FacultyId); setFaculty(faculty); onOpen()}} />
               </span>
             </Tooltip>
-            <Tooltip color="danger" content="Delete Role">
+            <Tooltip color="danger" content="Delete Faculty">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon onClick={() => {setIsDelete(true); setRoleId(role.RoleId); setRole(role); onOpen()}}/>
+                <DeleteIcon onClick={() => {setIsDelete(true); setFacultyId(faculty.FacultyId); setFaculty(faculty); onOpen()}}/>
               </span>
             </Tooltip>
           </div>
@@ -249,7 +233,7 @@ const ManageRoles = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search roles..."
+            placeholder="Search faculty..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
@@ -304,7 +288,7 @@ const ManageRoles = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {roles.length} users</span>
+          <span className="text-default-400 text-small">Total {faculties.length} faculties</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -327,7 +311,7 @@ const ManageRoles = () => {
     visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    roles.length,
+    faculties.length,
     hasSearchFilter,
   ]);
 
@@ -362,9 +346,8 @@ const ManageRoles = () => {
           setIsEdit(false);
           setIsDelete(false);
           setIsCreate(false);
-          setRole(defaultRole);
+          setFaculty(defaultFaculty);
           setErrorMessage("");
-          setValue("");
           onOpenChange()
         }}
         placement="top-center"
@@ -372,54 +355,35 @@ const ManageRoles = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">{isEdit ? "Edit Role" : isDelete ? "Delete Role" : isCreate ? "Add Role" : ""}</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">{isEdit ? "Edit Faculty" : isDelete ? "Delete Faculty" : isCreate ? "Add Faculty" : ""}</ModalHeader>
               <ModalBody>
                 {(isCreate || isEdit) ? (
                   <>
                     <Input
                       autoFocus
-                      label="Role Name"
-                      placeholder="Enter role name"
+                      label="Faculty Name"
+                      placeholder="Enter faculty name"
                       variant="bordered"
-                      onChange={(e) => {setRole({...role, RoleName: e.target.value})}}
-                      value={role.RoleName}
+                      onChange={(e) => {setFaculty({...faculty, FacultyName: e.target.value})}}
+                      value={faculty.FacultyName}
                     />
                     <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
                       {errorMessage}
                     </h5>
-                    <Select
-                      label= "Role Category"
-                      variant="bordered"
-                      placeholder="Select role category"
-                      errorMessage={isValid || !touched ? "" : "You need to select a role category"}
-                      isInvalid={isValid || !touched ? false: true}
-                      selectedKeys={[value]}
-                      className="max-w"
-                      onChange={(e) => {setValue(e.target.value)}}
-                      onClose={() => setTouched(true)}
-                      value={value}
-                    >
-                      {roleCategories.map((category) => (
-                        <SelectItem key={category.key}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    <p>Are you sure you want to delete <b>{role.RoleName}</b> ?</p>
+                    <p>Are you sure you want to delete <b>{faculty.CourseName}</b> ?</p>
                   </div>
                 )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
-                  setRole(defaultRole);
+                  setFaculty(defaultFaculty);
                   setIsEdit(false);
                   setIsDelete(false);
                   setIsCreate(false);
                   setErrorMessage("");
-                  setValue("");
                   onClose();
                 }}>
                   Close
@@ -428,28 +392,27 @@ const ManageRoles = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let newRole = {
-                        RoleId: generateGUID(),
-                        RoleName: role.RoleName,
-                        RoleCategoryId: value,
+                      let newFaculty = {
+                        FacultyId: generateGUID(),
+                        FacultyName: faculty.FacultyName,
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
                         UpdatedBy: null,
                         UpdatedDate: new Date(0).toISOString(),
                         ActiveFlag: true,
                       }
-                      await createRole(newRole).then((object: any) => {
+                      console.log(newFaculty)
+                      await createFaculty(newFaculty).then((object: any) => {
                         if(object.statusCode == 200){
                           onClose();
                           setIsCreate(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || []);
+                          setFaculty(defaultFaculty);
+                          fetchFaculties().then((object: any) => {
+                            setFaculties(object.data || []);
                           })
                           setErrorMessage("");
                         }else{
-                          setErrorMessage(object.message)
+                          setErrorMessage(object.message);
                         }
                       })
                     }finally{
@@ -462,28 +425,26 @@ const ManageRoles = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
-                      let updatedRole = {
-                        RoleId: role.RoleId,
-                        RoleName: role.RoleName,
-                        RoleCategoryId: value,
-                        CreatedBy: role.CreatedBy,
-                        CreatedDate: role.CreatedDate,
+                      let updatedFaculty = {
+                        FacultyId: faculty.FacultyId,
+                        FacultyName: faculty.FacultyName,
+                        CreatedBy: faculty.CreatedBy,
+                        CreatedDate: faculty.CreatedDate,
                         UpdatedBy: userData.name,
                         UpdatedDate: new Date().toISOString(),
-                        ActiveFlag: role.ActiveFlag,
+                        ActiveFlag: faculty.ActiveFlag,
                       }
-                      await updateRole(updatedRole).then((object: any) => {
+                      await updateFaculty(updatedFaculty).then((object: any) => {
                         if(object.statusCode == 200) {
                           onClose();
                           setIsEdit(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || [] as MsRole[]);
+                          setFaculty(defaultFaculty);
+                          fetchFaculties().then((object: any) => {
+                            setFaculties(object.data || [] as MsFaculty[]);
                           })
                           setErrorMessage("");
                         }else{
-                          setErrorMessage(object.message)
+                          setErrorMessage(object.message);
                         }
                       })
                     } finally {
@@ -496,18 +457,17 @@ const ManageRoles = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      await deleteRole(roleId).then((object: any) => {
+                      await deleteFaculty(facultyId).then((object: any) => {
                         if(object.statusCode == 200){
                           onClose();
                           setIsDelete(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || []);
+                          setFaculty(defaultFaculty);
+                          fetchFaculties().then((object: any) => {
+                            setFaculties(object.data || []);
                           })
                           setErrorMessage("");
                         }else{
-                          setErrorMessage(object.message)
+                          setErrorMessage(object.message);
                         }
                       })
                     }finally{
@@ -551,9 +511,9 @@ const ManageRoles = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody isLoading={isFetchingRoles} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No roles found"} items={sortedItems}>
+        <TableBody isLoading={isFetchingFaculties} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No courses found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.RoleId}>
+            <TableRow key={item.FacultyId}>
               {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
             </TableRow>
           )}
@@ -563,4 +523,4 @@ const ManageRoles = () => {
   );
 }
 
-export default ManageRoles;
+export default ManageFaculties;

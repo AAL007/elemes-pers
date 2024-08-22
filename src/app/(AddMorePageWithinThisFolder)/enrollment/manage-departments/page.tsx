@@ -37,12 +37,11 @@ import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { fetchRoles, deleteRole, createRole, updateRole, fetchRoleCategories } from '../../../api/user-management/manage-roles';
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { fetchDepartments, deleteDepartment, fetchFaculties } from '../../../api/enrollment/manage-departments';
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { MsRole, SelectList } from "@/app/api/data-model";
+import { MsFaculty, MsDepartment, SelectList } from "@/app/api/data-model";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -50,7 +49,7 @@ const statusColorMap: Record<string, ChipProps["color"]>  = {
 };
 
 const columns = [
-  {name: "ROLE NAME", uid: "RoleName", sortable: true},
+  {name: "DEPARTMENT NAME", uid: "DepartmentName", sortable: true},
   {name: "CREATED BY", uid: "CreatedBy"},
   {name: "UPDATED BY", uid: "UpdatedBy"},
   {name: "STATUS", uid: "ActiveFlag", sortable: true},
@@ -62,24 +61,24 @@ const statusOptions = [
   {name: "Inactive", uid: "inactive"},
 ];
 
-const defaultRole : MsRole = {
-  RoleId: "",
-  RoleName: "",
-  RoleCategoryId: "",
+const defaultDepartment : MsDepartment = {
+  DepartmentId: "",
+  DepartmentName: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
   UpdatedDate: new Date(0).toISOString(),
   ActiveFlag: false,
+  FacultyId: "",
 }
 
-const INITIAL_VISIBLE_COLUMNS = ["RoleName", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
+const INITIAL_VISIBLE_COLUMNS = ["DepartmentName", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const ManageRoles = () => {
+const ManageDepartments = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
   const [filterValue, setFilterValue] = React.useState("");
@@ -88,43 +87,52 @@ const ManageRoles = () => {
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "RoleName",
+    column: "DepartmentName",
     direction: "ascending",
   });
-  const [isFetchingRoles, setIsFetchingRoles] = React.useState(true);
+  const [isFetchingDepartment, setIsFetchingDepartment] = React.useState(true);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const [isEdit, setIsEdit] = React.useState(false);
-  const [isDelete, setIsDelete] = React.useState(false);
-  const [isCreate, setIsCreate] = React.useState(false);
-  const [roleId, setRoleId] = React.useState("");
-  let [role, setRole] = React.useState<MsRole | any>(defaultRole);
+  const [ facultyId, setFacultyId ] = React.useState<string>("");
+  const [touched, setTouched] = React.useState(false);
+  let [department, setDepartment] = React.useState<MsDepartment | any>(defaultDepartment);
   const [isLoading, setIsLoading] = React.useState(false);
   const [errorMessage, setErrorMessage] = React.useState("");
-  const [value, setValue] = React.useState("");
-  const [touched, setTouched] = React.useState(false);
-  const [roleCategories, setRoleCategories] = React.useState<SelectList[]>([])
+//   const [academicPeriods, setAcademicPeriods] = React.useState<SelectList[]>([])
 
-  const isValid = value !== ""
+  const isValid = facultyId !== ""
 
-  const [roles, setRoles] = React.useState<MsRole[]>([]);
+  const handleEditClick = (departmentId: string) => {
+    window.location.href = `manage-departments/edit-department/${departmentId}`
+  }
+
+  const handleAddClick = (facultyId: string) => {
+    console.log(facultyId)
+    window.location.href = `manage-departments/add-department/${facultyId}`
+  }
+
+  const [departments, setDepartments] = React.useState<MsDepartment[]>([]);
+  const [faculties, setFaculties] = React.useState<SelectList[]>([]);
   useEffect(() => {
     dispatch(loadUserFromStorage());
-    setIsFetchingRoles(true);
-    fetchRoles().then((object: any) => {
-      setRoles(object.data || []);
-    });
-    fetchRoleCategories().then((object: any) => {
-      const roleCategories = object.data.map((z: any) => {
-        return{
-          key: z.RoleCategoryId,
-          label: z.RoleCategoryName
-        }
-      })
-      setRoleCategories(roleCategories)
-      console.log(roleCategories)
+    fetchFaculties().then((object: any) => {
+        const faculties = object.data.map((z: MsFaculty) => {
+            return{
+                key: z.FacultyId,
+                label: z.FacultyName
+            }
+        })
+        setFaculties(faculties);
+        setFacultyId(faculties[0].key)
     })
-    setIsFetchingRoles(false);
   }, [dispatch]);
+
+  useEffect(() => {
+    setIsFetchingDepartment(true);
+    fetchDepartments(facultyId).then((object: any) => {
+        setDepartments(object.data || []);
+    })
+    setIsFetchingDepartment(false);
+  }, [facultyId]);
 
   const [page, setPage] = React.useState(1);
 
@@ -137,21 +145,21 @@ const ManageRoles = () => {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredUsers = [...roles];
+    let filteredDepartments = [...departments];
 
     if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter((user) =>
-        user.RoleName.toLowerCase().includes(filterValue.toLowerCase()),
+      filteredDepartments = filteredDepartments.filter((department) =>
+        department.DepartmentName.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(user.ActiveFlag ? "active" : "inactive"),
+      filteredDepartments = filteredDepartments.filter((department) =>
+        Array.from(statusFilter).includes(department.ActiveFlag ? "active" : "inactive"),
       );
     }
 
-    return filteredUsers;
-  }, [roles, filterValue, statusFilter]);
+    return filteredDepartments;
+  }, [departments, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -164,56 +172,56 @@ const ManageRoles = () => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof MsRole];
-      const second = b[sortDescriptor.column as keyof MsRole];
+      const first = a[sortDescriptor.column as keyof MsDepartment];
+      const second = b[sortDescriptor.column as keyof MsDepartment];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((role: MsRole, columnKey: React.Key) => {
-    const cellValue = role[columnKey as keyof MsRole];
+  const renderCell = React.useCallback((department: MsDepartment, columnKey: React.Key) => {
+    const cellValue = department[columnKey as keyof MsDepartment];
 
     switch (columnKey) {
-      case "RoleName":
+      case "DepartmentName":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{role.RoleName}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{department.DepartmentName}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-            <p className="text-bold text-tiny capitalize text-default-400">{role.CreatedBy}</p>
+            <p className="text-bold text-tiny capitalize text-default-400">{department.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
               {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
-              <p className="text-bold text-tiny capitalize text-default-400">{role.UpdatedBy ?? "N/A"}</p>
+              <p className="text-bold text-tiny capitalize text-default-400">{department.UpdatedBy ?? "N/A"}</p>
             </div>
           );
       case "ActiveFlag":
         return (
-          <Chip className="capitalize" color={statusColorMap[role.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
-            {role.ActiveFlag ? "active" : "inactive"}
+          <Chip className="capitalize" color={statusColorMap[department.ActiveFlag ? "active" : "inactive"]} size="sm" variant="flat">
+            {department.ActiveFlag ? "active" : "inactive"}
           </Chip>
         );
       case "Actions":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip content="Edit Role">
+            <Tooltip content="Edit Department">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setValue(role.RoleCategoryId); setRoleId(role.RoleId); setRole(role); onOpen()}} />
+                <EditIcon onClick={() => {handleEditClick(department.DepartmentId)}} />
               </span>
             </Tooltip>
-            <Tooltip color="danger" content="Delete Role">
+            <Tooltip color="danger" content="Delete Department">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon onClick={() => {setIsDelete(true); setRoleId(role.RoleId); setRole(role); onOpen()}}/>
+                <DeleteIcon onClick={() => {setDepartment(department); onOpen()}}/>
               </span>
             </Tooltip>
           </div>
@@ -249,7 +257,7 @@ const ManageRoles = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search roles..."
+            placeholder="Search departments..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
@@ -298,13 +306,13 @@ const ManageRoles = () => {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button onClick={() => {setIsCreate(true); onOpen()}} color="primary" endContent={<PlusIcon />}>
+            <Button onClick={() => {handleAddClick(facultyId)}} color="primary" endContent={<PlusIcon />}>
               Add New
             </Button>
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {roles.length} users</span>
+          <span className="text-default-400 text-small">Total {departments.length} Departments</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -325,9 +333,10 @@ const ManageRoles = () => {
     filterValue,
     statusFilter,
     visibleColumns,
+    facultyId,
     onSearchChange,
     onRowsPerPageChange,
-    roles.length,
+    departments.length,
     hasSearchFilter,
   ]);
 
@@ -359,12 +368,8 @@ const ManageRoles = () => {
         isDismissable={false}
         isOpen={isOpen} 
         onOpenChange={() => {
-          setIsEdit(false);
-          setIsDelete(false);
-          setIsCreate(false);
-          setRole(defaultRole);
+          setDepartment(defaultDepartment);
           setErrorMessage("");
-          setValue("");
           onOpenChange()
         }}
         placement="top-center"
@@ -372,156 +377,72 @@ const ManageRoles = () => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">{isEdit ? "Edit Role" : isDelete ? "Delete Role" : isCreate ? "Add Role" : ""}</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Delete Department</ModalHeader>
               <ModalBody>
-                {(isCreate || isEdit) ? (
-                  <>
-                    <Input
-                      autoFocus
-                      label="Role Name"
-                      placeholder="Enter role name"
-                      variant="bordered"
-                      onChange={(e) => {setRole({...role, RoleName: e.target.value})}}
-                      value={role.RoleName}
-                    />
-                    <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
-                      {errorMessage}
-                    </h5>
-                    <Select
-                      label= "Role Category"
-                      variant="bordered"
-                      placeholder="Select role category"
-                      errorMessage={isValid || !touched ? "" : "You need to select a role category"}
-                      isInvalid={isValid || !touched ? false: true}
-                      selectedKeys={[value]}
-                      className="max-w"
-                      onChange={(e) => {setValue(e.target.value)}}
-                      onClose={() => setTouched(true)}
-                      value={value}
-                    >
-                      {roleCategories.map((category) => (
-                        <SelectItem key={category.key}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                  </>
-                ) : (
-                  <div className="flex flex-col gap-4">
-                    <p>Are you sure you want to delete <b>{role.RoleName}</b> ?</p>
-                  </div>
-                )}
+                <div className="flex flex-col gap-4">
+                    <p>Are you sure you want to delete <b>{department.DepartmentName}</b> ?</p>
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
-                  setRole(defaultRole);
-                  setIsEdit(false);
-                  setIsDelete(false);
-                  setIsCreate(false);
+                  setDepartment(defaultDepartment);
                   setErrorMessage("");
-                  setValue("");
                   onClose();
                 }}>
                   Close
                 </Button>
-                {isCreate ? (
-                  <Button color="primary" onPress={async() => {
+                <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let newRole = {
-                        RoleId: generateGUID(),
-                        RoleName: role.RoleName,
-                        RoleCategoryId: value,
-                        CreatedBy: userData.name,
-                        CreatedDate: new Date().toISOString(),
-                        UpdatedBy: null,
-                        UpdatedDate: new Date(0).toISOString(),
-                        ActiveFlag: true,
-                      }
-                      await createRole(newRole).then((object: any) => {
-                        if(object.statusCode == 200){
-                          onClose();
-                          setIsCreate(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || []);
-                          })
-                          setErrorMessage("");
-                        }else{
-                          setErrorMessage(object.message)
-                        }
-                      })
+                        await deleteDepartment(department.DepartmentId).then((object: any) => {
+                            if(object.statusCode == 200){
+                                onClose();
+                                setDepartment(defaultDepartment);
+                                fetchDepartments(facultyId).then((object: any) => {
+                                    setDepartments(object.data || []);
+                                })
+                                setErrorMessage("");
+                                }else{
+                                setErrorMessage(object.message)
+                                }
+                        })
                     }finally{
-                      setIsLoading(false);
+                        setIsLoading(false);
                     }
-                    }}>
-                    {isLoading ? <Spinner size="sm" color="default"/> : "Add"}
-                  </Button>
-                ) : isEdit ? (
-                  <Button color="primary" onPress={async () => {
-                    setIsLoading(true);
-                    try {
-                      let updatedRole = {
-                        RoleId: role.RoleId,
-                        RoleName: role.RoleName,
-                        RoleCategoryId: value,
-                        CreatedBy: role.CreatedBy,
-                        CreatedDate: role.CreatedDate,
-                        UpdatedBy: userData.name,
-                        UpdatedDate: new Date().toISOString(),
-                        ActiveFlag: role.ActiveFlag,
-                      }
-                      await updateRole(updatedRole).then((object: any) => {
-                        if(object.statusCode == 200) {
-                          onClose();
-                          setIsEdit(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || [] as MsRole[]);
-                          })
-                          setErrorMessage("");
-                        }else{
-                          setErrorMessage(object.message)
-                        }
-                      })
-                    } finally {
-                      setIsLoading(false);
-                    }
-                  }}>
-                    {isLoading ? <Spinner color="default" size="sm"/> : "Edit"}
-                  </Button>
-                ) : (
-                  <Button color="primary" onPress={async() => {
-                    setIsLoading(true);
-                    try{
-                      await deleteRole(roleId).then((object: any) => {
-                        if(object.statusCode == 200){
-                          onClose();
-                          setIsDelete(false);
-                          setValue("");
-                          setRole(defaultRole);
-                          fetchRoles().then((object: any) => {
-                            setRoles(object.data || []);
-                          })
-                          setErrorMessage("");
-                        }else{
-                          setErrorMessage(object.message)
-                        }
-                      })
-                    }finally{
-                      setIsLoading(false);
-                    }
-                  }}>
+                }}>
                     {isLoading ? <Spinner color="default" size="sm"/> : "Delete"}
-                  </Button>
-                )}
+                </Button>
               </ModalFooter>
             </>
           )}
         </ModalContent>
       </Modal>
+      <Select
+        label= "Faculty"
+        variant="bordered"
+        placeholder="Select faculty"
+        errorMessage={isValid || !touched ? "" : "You need to select a faculty"}
+        isInvalid={isValid || !touched ? false: true}
+        selectedKeys={[facultyId]}
+        className="max-w-[44%] mb-7"
+        onChange={(e) => {
+          setFacultyId(e.target.value);
+          setIsFetchingDepartment(true);
+          fetchDepartments(e.target.value).then((object: any) => {
+            setDepartments(object.data || []);
+          });
+          setIsFetchingDepartment(false);
+        }}
+        onClose={() => setTouched(true)}
+        value={facultyId}
+        style={{ marginBottom: "2rem" }}
+      >
+        {faculties.map((faculty) => (
+          <SelectItem key={faculty.key}>
+            {faculty.label}
+          </SelectItem>
+         ))}
+      </Select>
       <Table
         aria-label="Example table with custom cells, pagination and sorting"
         isHeaderSticky
@@ -551,9 +472,9 @@ const ManageRoles = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody isLoading={isFetchingRoles} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No roles found"} items={sortedItems}>
+        <TableBody isLoading={isFetchingDepartment} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No departments found"} items={sortedItems}>
           {(item) => (
-            <TableRow key={item.RoleId}>
+            <TableRow key={item.DepartmentId}>
               {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
             </TableRow>
           )}
@@ -563,4 +484,4 @@ const ManageRoles = () => {
   );
 }
 
-export default ManageRoles;
+export default ManageDepartments;
