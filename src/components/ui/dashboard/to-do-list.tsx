@@ -57,8 +57,9 @@ import { fetchToDoList } from '@/app/api/home/dashboard';
 
 
 const ToDoList = () => {
-    const [toDoList, setToDoList] = React.useState<{message: string, quantity: number, deadline: string}[]>([]);
+    const [toDoList, setToDoList] = React.useState<{Message: string, Quantity: number}[]>([]);
     const dispatch = useDispatch();
+    const [deadline, setDeadline] = React.useState<string>("");
     const userData = useSelector((state: RootState) => state.user);
     
     useEffect(() => {
@@ -68,10 +69,8 @@ const ToDoList = () => {
             if (!res.success) {
                 alert(res.message);
             }
-            // console.log(res.data)
-            let filteredData = res.data.filter(item => item != "");
-            // console.log(filteredData)
-            setToDoList(filteredData as { message: string, quantity: number, deadline: string }[]);
+            setToDoList(res.data as { Message: string, Quantity: number}[]);
+            setDeadline(res.deadline[0].Deadline);
         };
         toDoList();
     }, [dispatch]);
@@ -142,7 +141,7 @@ const ToDoList = () => {
                                                 fontWeight: "400",
                                             }}
                                         >
-                                            {list.message}
+                                            {list.Message}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
@@ -152,7 +151,7 @@ const ToDoList = () => {
                                                 fontWeight: "400",
                                             }}
                                         >
-                                            {list.quantity}
+                                            {list.Quantity}
                                         </Typography>
                                     </TableCell>
                                     <TableCell>
@@ -162,7 +161,7 @@ const ToDoList = () => {
                                                 fontWeight: "400",
                                             }}
                                         >
-                                            {list.deadline}
+                                            {deadline}
                                         </Typography>
                                     </TableCell>
                                     {/* <TableCell>

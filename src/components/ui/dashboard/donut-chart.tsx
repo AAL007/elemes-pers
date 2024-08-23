@@ -28,6 +28,19 @@ const DonutChart: React.FC<DonutChartProps> = ({label, data, numberOfData, title
   const optionscolumnchart: any = {
     chart: {
       type: 'donut',
+      animations: {
+        enabled: true,
+        easing: 'easeinout',
+        speed: 800,
+        animateGradually: {
+            enabled: true,
+            delay: 150
+        },
+        dynamicAnimation: {
+            enabled: true,
+            speed: 350
+        }
+      },
       fontFamily: "'Plus Jakarta Sans', sans-serif;",
       foreColor: '#adb0bb',
       toolbar: {
