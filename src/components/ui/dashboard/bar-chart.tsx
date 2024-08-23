@@ -1,20 +1,78 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DashboardCard from './dashboard-card';
 import dynamic from "next/dynamic";
+import { fetchStudentsEnrolled } from '@/app/api/home/dashboard';
+import { dropdown } from '@nextui-org/react';
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface BarChartProps {
-    categories: string[];
-    data: number[];
-    dropdownList: string[];
     title: string;
 }
 
-const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, title}) => {
+const BarChart : React.FC<BarChartProps> = ({title}) => {
     // select
-    const [month, setMonth] = React.useState('1');
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+    const monthNames = [
+        "January", "February", "March", "April", "May", "June", "July",
+        "August", "September", "October", "November", "December"
+    ];
+    const generateMonthDDL = () => {
+        const distinctMonths: string[] = [];
+  
+        for (let year = currentYear - 2; year <= currentYear; year++) {
+          for (let month = 0; month < 12; month++) {
+            const monthName = `${monthNames[month]} ${year}`;
+            distinctMonths.push(monthName);
+          }
+        }
+
+        let currentMonthName = `${monthNames[currentMonth]} ${currentYear}`;
+        // console.log(currentMonthName)
+        setMonth(currentMonthName);
+        setMonthDDL(distinctMonths);
+    }
+
+    const fetchData = async () => {
+        setIsDataBeingFetched(true);
+        let month_input = monthNames.findIndex(x => x == month.split(" ")[0]) + 1
+        let year_input = parseInt(month.split(" ")[1])
+
+        const res = await fetchStudentsEnrolled(month_input, year_input);
+        if (!res.success) {
+            // console.log(res.message);
+            alert(res.message);
+            return;
+        }
+        // console.log(res.data)
+        let totalEnrolledStudents = res.data.map((z: any) => {
+            return z.StudentCount
+        })
+        let dateCategories = res.data.map((z: any) => {
+            return z.EnrolledDate
+        })
+        setTotalEnrolledstudents(totalEnrolledStudents);
+        setDateCategories(dateCategories);
+        setIsDataBeingFetched(false);
+    }
+
+    const [dropdownList, setMonthDDL] = React.useState<string[]>([]);
+    const [month, setMonth] = React.useState(`${monthNames[currentMonth]} ${currentYear}`);
+    const [totalEnrolledStudents, setTotalEnrolledstudents] = React.useState<number[]>([]);
+    const [dateCategories, setDateCategories] = React.useState<string[]>([]);
+    const [isDataBeingFetched, setIsDataBeingFetched] = React.useState<boolean>(false);
+
+    useEffect(() => {
+        generateMonthDDL();
+        fetchData();
+    }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [month])
 
     const handleChange = (event: any) => {
         setMonth(event.target.value);
@@ -28,6 +86,19 @@ const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, tit
     // chart
     const optionscolumnchart: any = {
         chart: {
+            animations: {
+                enabled: true,
+                easing: 'easeinout',
+                speed: 800,
+                animateGradually: {
+                    enabled: true,
+                    delay: 150
+                },
+                dynamicAnimation: {
+                    enabled: true,
+                    speed: 350
+                }
+            },
             type: 'bar',
             fontFamily: "'Plus Jakarta Sans', sans-serif;",
             foreColor: '#adb0bb',
@@ -35,6 +106,18 @@ const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, tit
                 show: true,
             },
             height: 370,
+        },
+        noData: {  
+            text: isDataBeingFetched ? "Loading...":"No Data present in the graph!",  
+            align: 'center',  
+            verticalAlign: 'middle',  
+            offsetX: 0,  
+            offsetY: 0,  
+            style: {  
+              color: "#000000",  
+              fontSize: '14px',  
+              fontFamily: "Helvetica"  
+            }  
         },
         colors: [primary, secondary],
         plotOptions: {
@@ -73,7 +156,7 @@ const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, tit
             tickAmount: 4,
         },
         xaxis: {
-            categories: categories,
+            categories: dateCategories,
             axisBorder: {
                 show: false,
             },
@@ -85,8 +168,8 @@ const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, tit
     };
     const seriescolumnchart: any = [
         {
-            name: {title},
-            data: data,
+            name: title,
+            data: totalEnrolledStudents,
         },
         // {
         //     name: 'Expense this month',
@@ -104,13 +187,13 @@ const BarChart : React.FC<BarChartProps> = ({categories, data, dropdownList, tit
                 size="small"
                 onChange={handleChange}
             >
-                {dropdownList.map((x: string, index: number) => {
-                    index++;
-                    return <MenuItem value={index}>{x}</MenuItem>
+                {dropdownList.map((x: string) => {
+                    return <MenuItem value={x}>{x}</MenuItem>
                 })}
             </Select>
         }>
             <Chart
+                loading={totalEnrolledStudents.length == 0}
                 options={optionscolumnchart}
                 series={seriescolumnchart}
                 type="bar"

@@ -22,20 +22,18 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
-  const [messages, setMessages] = React.useState<{message: string, category: string}[]>([]);
+  const [messages, setMessages] = React.useState<{Message: string, Entity: string}[]>([]);
 
   useEffect(() => {
     dispatch(loadUserFromStorage())
     const administratorNotification = async () => {
       const res = await fetchAdministratorNotification();
       if(!res.success){
-        // console.log(res.message);
         alert(res.message);
         return;
       }
-      const filteredData = res.data.filter(item => item != "");
-      // console.log(filteredData);
-      setMessages(filteredData as {message: string, category: string}[]);
+
+      setMessages(res.data as {Message: string, Entity: string}[]);
     }
 
     administratorNotification();
@@ -92,9 +90,9 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
                 key={index}
                 // shortcut="⌘N"
                 showDivider
-                description={message.message}
+                description={message.Message}
               >
-                {message.category}
+                {message.Entity}
               </DropdownItem>
             ))}
           </DropdownMenu>

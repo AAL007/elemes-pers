@@ -42,13 +42,18 @@ const RecentActivities : React.FC<RecentActivitiesProps> = ({data}) => {
             },
           }}
         >
+          {data.length == 0 && 
+            <TimelineItem>
+              <Typography>No recent activities found</Typography>
+            </TimelineItem>
+          }
           {data.map((item, index) => {
             const isLastItem = index === data.length - 1;
             return (
               <TimelineItem>
               <TimelineOppositeContent>{item.time}</TimelineOppositeContent>
               <TimelineSeparator>
-                <TimelineDot color={item.activity == "Create" ? "success" : item.activity == "Update" ? "primary" : "error"} variant="outlined" />
+                <TimelineDot color={item.activity == "Created" ? "success" : item.activity == "Updated" ? "primary" : "error"} variant="outlined" />
                 {!isLastItem && <TimelineConnector />}
               </TimelineSeparator>
               <TimelineContent className={isLastItem ? 'mb-10' : ''}>{item.message}</TimelineContent>
