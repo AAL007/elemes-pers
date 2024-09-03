@@ -26,16 +26,30 @@ import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { CourseDetail, SelectList } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
-import { fetchCourseDetail, fetchCourse, createCourseDetail, updateCourseDetail, deleteCourseDetail, updateCourseDetailSessionNumber } from "@/app/api/enrollment/manage-course-detail";
+import { 
+  fetchCourseDetail, 
+  fetchCourse, 
+  createCourseDetail, 
+  updateCourseDetail,
+  deleteCourseDetail, 
+  updateCourseDetailSessionNumber,
+  uploadFileToAzureBlobStorage,
+  replaceFileInAzureBlobStorage,
+  deleteFileInAzureBlobStorageByUrl
+} from "@/app/api/enrollment/manage-course-detail";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
 import { IconDotsVertical } from "@tabler/icons-react"
 import { useOptimistic, useTransition } from "react"
 import { Tooltip } from "@nextui-org/react"
-
+import { FileUpload } from "@/components/ui/file-upload";
+import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { resolve } from "path";
 const defaultCourseDetail : CourseDetail = {
   CourseId: "",
+  SessionId: "",
   SessionNumber: 0,
   SessionName: "",
+  ContentUrl: "",
   LearningOutcome: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
@@ -53,10 +67,13 @@ const ManageCourseDetail = () => {
   const [isDelete, setIsDelete] = React.useState(false);
   const [isCreate, setIsCreate] = React.useState(false);
   const [courseId, setCourseId] = React.useState("");
+  const [courseLabel, setCourseLabel] = React.useState("");
+  const [uploadClicked, setUploadClicked] = React.useState(false);
   let [courseDetail, setCourseDetail] = React.useState<CourseDetail | any>(defaultCourseDetail);
   const [isLoading, setIsLoading] = React.useState(false);
   const [touched, setTouched] = React.useState(false);
-
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [existingFile, setExistingFile] = React.useState<File | null>(null);
   const [courseDetails, setCourseDetails] = React.useState<any[]>([]);
   const [courses, setCourses] = React.useState<SelectList[]>([]);
   const isValid = courseId !== ""
@@ -65,8 +82,8 @@ const ManageCourseDetail = () => {
     const [optimisticState, swapOptimistic] = useOptimistic(
         courseDetails,
         (state, { sourceId, destinationId }) => {
-            const sourceIndex = state.findIndex((item) => item.SessionNumber === sourceId);
-            const destinationIndex = state.findIndex((item) => item.SessionNumber === destinationId);
+            const sourceIndex = state.findIndex((item) => item.SessionId === sourceId);
+            const destinationIndex = state.findIndex((item) => item.SessionId === destinationId);
             const updatedState = [...state];
             updatedState[sourceIndex] = state[destinationIndex];
             updatedState[destinationIndex] = state[sourceIndex];
@@ -74,14 +91,54 @@ const ManageCourseDetail = () => {
         }
     )
 
+    const handleFileUpload = (files: File[]) => {
+      setFiles(files);
+    }
+
+    const fetchFileFromUrl = async (url: string) => {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const fileName = url.split("/").pop();
+      return new File([blob], fileName || "file");
+    }
+
+    const handleEditClick = async (list: any) => {
+      try {
+        const resolvedList = await list;
+        const resolvedFile = await resolvedList.File;
+        await setExistingFile(resolvedFile);
+        setIsEdit(true);
+        onOpen();
+        setCourseDetail(resolvedList);
+      } catch (error) {
+        console.error("Error resolving list:", error);
+      }
+    };
+
+    const handleDeleteClick = async (list: any) => {
+      try{
+        const resolvedList = await list;
+        await setCourseDetail(resolvedList);
+        setIsDelete(true);
+        onOpen();
+      }catch(error){
+        console.error("Error resolving list:", error);
+      }
+    }
+
     const fetchingCourseDetail = async () => {
         setIsFetchingCourses(true);
         await fetchCourseDetail(courseId).then((object: any) => {
             let courseDetails = object.data.map((z: any) => {
+              const file = fetchFileFromUrl(z.ContentUrl);
+              // console.log(file);
                 return {
                     CourseId: z.CourseId,
+                    SessionId: z.SessionId,
                     SessionNumber: z.SessionNumber.toString(),
                     SessionName: z.SessionName,
+                    ContentUrl: z.ContentUrl,
+                    File: file,
                     LearningOutcome: z.LearningOutcome,
                     CreatedBy: z.CreatedBy,
                     CreatedDate: z.CreatedDate,
@@ -90,6 +147,7 @@ const ManageCourseDetail = () => {
                     ActiveFlag: z.ActiveFlag
                 }
             })
+            // console.log(courseDetails);
             setCourseDetails(courseDetails);
         })
         setIsFetchingCourses(false);
@@ -97,12 +155,11 @@ const ManageCourseDetail = () => {
 
     const onDragEnd = async (result: any) => {
         const sourceId = result.draggableId;
-        const destinationId = courseDetails[result.destination.index].SessionNumber;
+        const destinationId = courseDetails[result.destination.index].SessionId;
         swapOptimistic({ sourceId: sourceId, destinationId: destinationId });
         startTransition( async () => {
-            let res = await updateCourseDetailSessionNumber(courseId, parseInt(sourceId), parseInt(destinationId));
+            let res = await updateCourseDetailSessionNumber(courseId, sourceId, destinationId);
             if (!res.success) {
-                console.log(res.message);
                 alert(res.message)
                 return;
             }
@@ -128,6 +185,10 @@ const ManageCourseDetail = () => {
     fetchingCourseDetail();
   }, [courseId])
 
+  useEffect(() => {
+    setCourseLabel(courses.find((z) => z.key === courseId)?.label || "");
+  }, [courseId])
+
   return (
     <>
       <Modal
@@ -138,7 +199,10 @@ const ManageCourseDetail = () => {
           setIsEdit(false);
           setIsDelete(false);
           setIsCreate(false);
+          setFiles([]);
+          setExistingFile(null);
           setCourseDetail(defaultCourseDetail);
+          setUploadClicked(false);
           onOpenChange()
         }}
         placement="top-center"
@@ -155,6 +219,7 @@ const ManageCourseDetail = () => {
                       label="Session Name"
                       placeholder="Enter session name"
                       variant="bordered"
+                      onClick={async () => await setUploadClicked(false)}
                       onChange={(e) => {setCourseDetail({...courseDetail, SessionName: e.target.value})}}
                       value={courseDetail.SessionName}
                     />
@@ -165,6 +230,7 @@ const ManageCourseDetail = () => {
                             label="Session Number"
                             placeholder="Enter session number"
                             variant="bordered"
+                            onClick={async () => await setUploadClicked(false)}
                             onChange={(e) => {setCourseDetail({...courseDetail, SessionNumber: e.target.value})}}
                             value={courseDetail.SessionNumber}
                         />
@@ -174,9 +240,15 @@ const ManageCourseDetail = () => {
                       label="Learning Outcome"
                       placeholder="Enter learning outcome"
                       variant="bordered"
+                      onClick={async () => await setUploadClicked(false)}
                       onChange={(e) => {setCourseDetail({...courseDetail, LearningOutcome: e.target.value})}}
                       value={courseDetail.LearningOutcome}
                     />
+                    <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
+                      <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
+                      <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
+                      <FileUpload existingFile={existingFile} onChange={handleFileUpload} />
+                    </div>
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -190,6 +262,9 @@ const ManageCourseDetail = () => {
                   setIsEdit(false);
                   setIsDelete(false);
                   setIsCreate(false);
+                  setFiles([]);
+                  setExistingFile(null);
+                  setUploadClicked(false);
                   onClose();
                 }}>
                   Close
@@ -198,10 +273,14 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
+                      let sessionId = await generateGUID();
+                      let blobUrl = await uploadFileToAzureBlobStorage(files[0], courseLabel, sessionId);
                       let newCourseDetail: CourseDetail = {
                         CourseId: courseId,
+                        SessionId: sessionId,
                         SessionNumber: courseDetail.SessionNumber,
                         SessionName: courseDetail.SessionName,
+                        ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
@@ -215,11 +294,13 @@ const ManageCourseDetail = () => {
                             return;
                         }
                         onClose();
+                        setFiles([]);
+                        setExistingFile(null);
                         setIsCreate(false);
+                        setUploadClicked(false);
                         setCourseDetail(defaultCourseDetail);
                         fetchingCourseDetail();
                       })
-
                     }finally{
                       setIsLoading(false);
                     }
@@ -230,10 +311,13 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
+                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage(files[0], courseLabel, courseDetail.SessionId) : courseDetail.ContentUrl;
                       let updatedCourseDetail: CourseDetail = {
                         CourseId: courseDetail.CourseId,
+                        SessionId: courseDetail.SessionId,
                         SessionNumber: courseDetail.SessionNumber,
                         SessionName: courseDetail.SessionName,
+                        ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
                         CreatedBy: courseDetail.CreatedBy,
                         CreatedDate: courseDetail.CreatedDate,
@@ -244,6 +328,9 @@ const ManageCourseDetail = () => {
                       await updateCourseDetail(updatedCourseDetail).then((object: any) => {
                         if(object.success) {
                           onClose();
+                          setFiles([]);
+                          setExistingFile(null);
+                          setUploadClicked(false);
                           setIsEdit(false);
                           setCourseDetail(defaultCourseDetail);
                           fetchingCourseDetail();
@@ -261,10 +348,14 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
+                      let res = await deleteFileInAzureBlobStorageByUrl(courseLabel, courseDetail.SessionId);
                       await deleteCourseDetail(courseId, courseDetail.SessionNumber).then((object: any) => {
                         if(object.success){
                           onClose();
+                          setFiles([]);
+                          setExistingFile(null);
                           setIsDelete(false);
+                          setUploadClicked(false);
                           setCourseDetail(defaultCourseDetail);
                           fetchingCourseDetail();
                         }else{
@@ -340,8 +431,8 @@ const ManageCourseDetail = () => {
                                 {optimisticState.map((list, index) => {
                                     return (
                                         <Draggable
-                                            key={list.SessionNumber}
-                                            draggableId={list.SessionNumber}
+                                            key={list.SessionId}
+                                            draggableId={list.SessionId}
                                             index={index}
                                         >
                                             {(provided) => {
@@ -363,12 +454,12 @@ const ManageCourseDetail = () => {
                                                             </div>
                                                             <Tooltip content="Edit Course Detail" className="flex gap-2">
                                                                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                                                                    <EditIcon onClick={() => {setIsEdit(true); setCourseDetail(list); onOpen()}} />
+                                                                    <EditIcon onClick={() => {handleEditClick(list)}} />
                                                                 </span>
                                                             </Tooltip>
                                                             <Tooltip color="danger" content="Delete Course Detail">
                                                                 <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                                                                    <DeleteIcon onClick={() => {setIsDelete(true); setCourseDetail(list); onOpen()}}/>
+                                                                    <DeleteIcon onClick={() => {handleDeleteClick(list)}}/>
                                                                 </span>
                                                             </Tooltip>
                                                         </CardHeader>

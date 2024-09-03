@@ -126,8 +126,10 @@ export type MsCourse = {
 
 export type CourseDetail = {
     CourseId: string;
+    SessionId: string;
     SessionNumber: number;
     SessionName: string;
+    ContentUrl: string;
     LearningOutcome: string;
     CreatedBy: string;
     CreatedDate: any;
