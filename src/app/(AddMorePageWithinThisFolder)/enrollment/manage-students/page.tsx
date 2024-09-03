@@ -260,7 +260,7 @@ const ManageStudents = () => {
       default:
         return cellValue;
     }
-  }, [students]);
+  }, [enrollments]);
 
   const onRowsPerPageChange = React.useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     setRowsPerPage(Number(e.target.value));
@@ -361,6 +361,7 @@ const ManageStudents = () => {
       </div>
     );
   }, [
+    enrollments,
     filterValue,
     statusFilter,
     visibleColumns,

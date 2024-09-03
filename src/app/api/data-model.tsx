@@ -124,6 +124,20 @@ export type MsCourse = {
     ActiveFlag: boolean;
 }
 
+export type CourseDetail = {
+    CourseId: string;
+    SessionId: string;
+    SessionNumber: number;
+    SessionName: string;
+    ContentUrl: string;
+    LearningOutcome: string;
+    CreatedBy: string;
+    CreatedDate: any;
+    UpdatedBy: string | null;
+    UpdatedDate: any;
+    ActiveFlag: boolean;
+}
+
 export type SelectList = {
     key: string;
     label: string;

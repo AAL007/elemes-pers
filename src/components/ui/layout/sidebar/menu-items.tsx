@@ -32,6 +32,25 @@ const Menuitems = [
   },
   {
     navlabel: true,
+    subheader: "Content Management",
+    roles: ["lecturer"],
+  },
+  {
+    id: uniqueId(),
+    title: "Content",
+    icon: IconLayoutDashboard,
+    href: "/content-management/content",
+    roles: ["lecturer"],
+  },
+  {
+    id: uniqueId(),
+    title: "Assignment",
+    icon: IconLayoutDashboard,
+    href: "/content-management/assignment",
+    roles: ["lecturer"],
+  },
+  {
+    navlabel: true,
     subheader: "User Management",
     roles: ["administrator"],
   },
@@ -57,8 +76,15 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: "Manage Courses",
-    icon: IconCertificate2,
+    icon: IconCertificate,
     href: "/enrollment/manage-courses",
+    roles: ["administrator"],
+  },
+  {
+    id: uniqueId(),
+    title: "Manage Course Detail",
+    icon: IconCertificate2,
+    href: "/enrollment/manage-course-detail",
     roles: ["administrator"],
   },
   {
