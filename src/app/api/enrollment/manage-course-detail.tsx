@@ -1,74 +1,9 @@
-'use client'
+'use server'
 
-import { createClient } from "../../../../utils/supabase/client"
+import { createClient } from "../../../../utils/supabase/server"
 import { CourseDetail } from "../data-model"
-const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob')
+
 const supabase = createClient()
-
-const azureStorageName = process.env.ACCOUNT_NAME
-const courseContentContainer = "course-content"
-const sasToken = "sv=2022-11-02&ss=bfqt&srt=co&sp=rwdlacupyx&se=2025-02-28T16:07:07Z&st=2024-08-29T08:07:07Z&spr=https&sig=navaS7%2FMj1RxsWjMT3Fl51DGsTYklZgZlVKIbmg%2B%2Fqo%3D"
-const azureStorageUrl = `https://elemesstorage.blob.core.windows.net`
-
-const blobServiceClient = new BlobServiceClient(`${azureStorageUrl}?${sasToken}`)
-let containerClient = blobServiceClient.getContainerClient(courseContentContainer);
-
-export async function uploadFileToAzureBlobStorage(file: File, courseName: string, sessionId: string) {
-    const fileType = file.type.split('/').pop();
-    const newFileName = `${courseName}/${sessionId}.${fileType}`;
-    const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
-    await blockBlobClient.uploadData(file);
-
-    const blobUrl = blockBlobClient.url;
-    return blobUrl;
-}
-
-export async function replaceFileInAzureBlobStorage(file: File, courseName: string, sessionId: string) {
-    const prefix = `${courseName}/${sessionId}`;
-    let oldBlobName: string | undefined;
-
-    // List blobs and find the matching blob
-    for await (const blob of containerClient.listBlobsFlat({ prefix })) {
-        if (blob.name.startsWith(prefix)) {
-            oldBlobName = blob.name;
-            break;
-        }
-    }
-
-    if (oldBlobName) {
-        const oldBlobClient = containerClient.getBlockBlobClient(oldBlobName);
-        await oldBlobClient.delete();
-    }
-
-    const fileType = file.type.split('/').pop();
-    const newBlobName = `${courseName}/${sessionId}.${fileType}`;
-    const newBlobClient = containerClient.getBlockBlobClient(newBlobName);
-
-    await newBlobClient.uploadData(file, {
-        blobHTTPHeaders: { blobContentType: file.type },
-        overwrite: true
-    });
-
-    return newBlobClient.url;
-}
-
-export async function deleteFileInAzureBlobStorageByUrl(courseName: string, sessionId: string): Promise<void> {
-    const prefix = `${courseName}/${sessionId}`;
-    let oldBlobName: string | undefined;
-
-    // List blobs and find the matching blob
-    for await (const blob of containerClient.listBlobsFlat({ prefix })) {
-        if (blob.name.startsWith(prefix)) {
-            oldBlobName = blob.name;
-            break;
-        }
-    }
-
-    if (oldBlobName) {
-        const oldBlobClient = containerClient.getBlockBlobClient(oldBlobName);
-        await oldBlobClient.delete();
-    }
-}
 
 export async function fetchCourse() {
     const { data, error } = await supabase.from('MsCourse').select('CourseId, CourseName').eq('ActiveFlag', true)

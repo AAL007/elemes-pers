@@ -94,8 +94,62 @@ export async function fetchStudentNotification() {
 }
 
 // Lecturer
+export async function fetchLecturerBarChart(courseId: string, classId: string, academicPeriodId: string) {
+    const { data, error } = await supabase.rpc('fetch_lecturer_bar_chart', {course_id: courseId, class_id: classId, academic_period_id: academicPeriodId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
 
-export async function fetchLecturerNotification() {
+export async function fetchActiveClassStudents(lecturerId: string){
+    const res = await supabase.rpc('fetch_active_class_students', {lecturer_id: lecturerId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
 
+    return {success: true, message: 'Data fetched successfully!', data: res.data}
+}
+
+export async function fetchActiveAssignmentClass(lecturerId: string){
+    const res = await supabase.rpc('fetch_active_assignment_class', {lecturer_id: lecturerId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+
+    return {success: true, message: 'Data fetched successfully!', data: res.data}
+}
+
+export async function fetchLecturerRecentActivity(userName: string, userId: string){
+    const res = await supabase.rpc('fetch_lecturer_recent_activity', {user_name: userName, user_id: userId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+
+    let data = res.data.map((z: any) => {
+        return {
+            activity: z.Operation,
+            message: `${z.Entity} ${z.Object} has been ${z.Operation}`,
+            time: z.Time
+        }
+    })
+
+    return {success: true, message: 'Notifications fetched successfully!', data: data}
+}
+
+export async function fetchLecturerToDoList(userId: string){
+    let res = await supabase.rpc('fetch_lecturer_to_do_list', {user_id: userId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+    return {success: true, message: 'Notifications fetched successfully!', data: res.data}
+}
+
+export async function fetchLecturerNotification(lecturerId: string) {
+    let res = await supabase.rpc('fetch_lecturer_notification', {lecturer_id: lecturerId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+    return {success: true, message: 'Notifications fetched successfully!', data: res.data}
 }
 

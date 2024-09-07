@@ -11,7 +11,7 @@ interface BarChartProps {
     title: string;
 }
 
-const BarChart : React.FC<BarChartProps> = ({title}) => {
+const StudentBarChart : React.FC<BarChartProps> = ({title}) => {
     // select
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
@@ -203,4 +203,4 @@ const BarChart : React.FC<BarChartProps> = ({title}) => {
     );
 };
 
-export default BarChart;
+export default StudentBarChart;

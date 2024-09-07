@@ -1,6 +1,7 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 export interface userState {
+    id: string;
     name: string;
     email: string;
     role: string;
@@ -8,6 +9,7 @@ export interface userState {
 }
 
 const initialState: userState = {
+    id: "",
     name: "",
     email: "",
     role: "",
@@ -19,9 +21,10 @@ export const userSlice = createSlice({
     initialState,
     reducers: {
         setUserData(state, action: PayloadAction<userState>){
-            console.log(action.payload);
-            console.log(action)
-            console.log(state)
+            // console.log(action.payload);
+            // console.log(action)
+            // console.log(state)
+            state.id = action.payload.id;
             state.email = action.payload.email;
             state.name = action.payload.name;
             state.role = action.payload.role;
@@ -31,12 +34,14 @@ export const userSlice = createSlice({
         loadUserFromStorage: (state) => {
             const user = JSON.parse(localStorage.getItem('user') as string);
             if (user) {
+              state.id = user.id;
               state.name = user.name;
               state.email = user.email;
               state.role = user.role;
             }
           },
           clearUser: (state) => {
+            state.id = '';
             state.name = '';
             state.email = '';
             state.role = '';

@@ -2,111 +2,182 @@
 import { Grid, Box } from '@mui/material';
 import PageContainer from '@/components/ui/container/page-container';
 // components
-import BarChart from '@/components/ui/dashboard/bar-chart';
+import BarChart from '@/components/ui/dashboard/administrator-bar-chart';
 import DonutChart from '@/components/ui/dashboard/donut-chart';
 import RecentActivities from '@/components/ui/dashboard/recent-activities';
-import ToDoList from '@/components/ui/dashboard/to-do-list';
+import AdministratorToDoList from '@/components/ui/dashboard/administrator-to-do-list';
+import LecturerToDoList from '@/components/ui/dashboard/lecturer-to-do-list';
 // import AreaChart from '@/components/ui/dashboard/area-chart';
-import React from 'react';
-import { useEffect } from 'react';
-import { fetchTotalActiveUser, fetchTotalActiveClass, fetchStudentsEnrolled, fetchAdministratorRecentActivities } from '@/app/api/home/dashboard';
+import React, { useEffect, useState } from 'react';
+import { fetchTotalActiveUser, fetchTotalActiveClass, fetchStudentsEnrolled, fetchAdministratorRecentActivities, fetchActiveClassStudents, fetchActiveAssignmentClass, fetchLecturerRecentActivity } from '@/app/api/home/dashboard';
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { set } from 'lodash';
+import AdministratorBarChart from '@/components/ui/dashboard/administrator-bar-chart';
+import LecturerBarChart from '@/components/ui/dashboard/lecturer-bar-chart';
+import StudentBarChart from '@/components/ui/dashboard/student-bar-chart';
+import Loading from './loading';
 
 const Dashboard = () => {
-  const [countsActiveUser, setCountsActiveUser] = React.useState<number[]>([]);
-  const [roles, setRoles] = React.useState<string[]>([]);
-  const [totalActiveUsers, setTotalActiveUsers] = React.useState<number>(0);
-  const [countsActiveClass, setCountsActiveClass] = React.useState<number[]>([]);
-  const [classes, setClasses] = React.useState<string[]>([]);
-  const [totalActiveClasses, setTotalActiveClasses] = React.useState<number>(0);
-
+  const [countsActiveUser, setCountsActiveUser] = useState<number[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [totalActiveUsers, setTotalActiveUsers] = useState<number>(0);
+  const [countsActiveClass, setCountsActiveClass] = useState<number[]>([]);
+  const [classes, setClasses] = useState<string[]>([]);
+  const [totalActiveClasses, setTotalActiveClasses] = useState<number>(0);
+  const [administratorNotification, setAdministratorNotification] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
-  const [administratorNotification, setAdministratorNotification] = React.useState<any[]>([]);
 
   useEffect(() => {
-    dispatch(loadUserFromStorage())
+    const initialize = async () => {
+      dispatch(loadUserFromStorage());
+
+      if(userData.role == "Administrator"){
+        const fetchActiveUser = async () => {
+          const res = await fetchTotalActiveUser();
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
   
-    const fetchActiveUser = async () => {
-      const res = await fetchTotalActiveUser();
-      if(!res.success){
-        alert(res.message);
-        return;
+          let roles = res.data.map((x: any) => x.RoleName);
+          let counts = res.data.map((x: any) => x.Count);
+          let totalActiveUsers = counts.reduce((a: number, b: number) => a + b, 0);
+  
+          setCountsActiveUser(counts);
+          setRoles(roles);
+          setTotalActiveUsers(totalActiveUsers);
+        };
+  
+        const fetchActiveClass = async () => {
+          const res = await fetchTotalActiveClass();
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+  
+          let classes = res.data.map((x: any) => x.Status);
+          let counts = res.data.map((x: any) => x.Total);
+          let totalActiveClasses = counts.reduce((a: number, b: number) => a + b, 0);
+  
+          setCountsActiveClass(counts);
+          setClasses(classes);
+          setTotalActiveClasses(totalActiveClasses);
+        };
+  
+        const fetchRecentActivities = async () => {
+          const res = await fetchAdministratorRecentActivities(userData.name);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+  
+          setAdministratorNotification(res.data);
+        };
+  
+        await fetchActiveUser();
+        await fetchActiveClass();
+        await fetchRecentActivities();
+      } else if(userData.role == "Lecturer"){
+        const fetchingActiveClassStudents = async () => {
+          const res = await fetchActiveClassStudents(userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+          let roles = res.data.map((x: any) => x.className);
+          let counts = res.data.map((x: any) => x.studentCount);
+          let totalActiveUsers = counts.reduce((a: number, b: number) => a + b, 0);
+
+          setCountsActiveUser(counts);
+          setRoles(roles);
+          setTotalActiveUsers(totalActiveUsers);
+        }
+
+        const fetchingActiveAssignmentClass = async () => {
+          const res = await fetchActiveAssignmentClass(userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+          let classes = res.data.map((x: any) => x.className);
+          let counts = res.data.map((x: any) => x.assignmentCount);
+          let totalActiveClasses = counts.reduce((a: number, b: number) => a + b, 0);
+  
+          setCountsActiveClass(counts);
+          setClasses(classes);
+          setTotalActiveClasses(totalActiveClasses);
+        }
+
+        const fetchingLecturerRecentActivity = async () => {
+          const res = await fetchLecturerRecentActivity(userData.name, userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+  
+          setAdministratorNotification(res.data)
+        }
+
+        await fetchingActiveClassStudents();
+        await fetchingActiveAssignmentClass();
+        await fetchingLecturerRecentActivity();
+      } else if(userData.role == "Student"){
+
       }
+ 
+      setIsLoading(false);
+    };
 
-      let roles = res.data.map((x: any) => {return x.RoleName});
-      let counts = res.data.map((x: any) => {return x.Count});
-      let totalActiveUsers = counts.reduce((a: number, b: number) => a + b, 0); 
+    initialize();
+  }, [dispatch, userData.name]);
 
-      setCountsActiveUser(counts);
-      setRoles(roles);
-      setTotalActiveUsers(totalActiveUsers);
-    }
-
-    const fetchActiveClass = async () => {
-      const res = await fetchTotalActiveClass();
-      if(!res.success){
-        alert(res.message);
-        return;
-      }
-
-      let classes = res.data.map((x: any) => {return x.Status})
-      let counts = res.data.map((x: any) => {return x.Total});
-      let totalActiveClasses = counts.reduce((a: number, b: number) => a + b, 0); 
-
-      setCountsActiveClass(counts);
-      setClasses(classes);
-      setTotalActiveClasses(totalActiveClasses);
-    }
-
-    const fetchRecentActivities = async () => {
-      const res = await fetchAdministratorRecentActivities(userData.name);
-      if(!res.success){
-        alert(res.message);
-        return;
-      }
-
-      // console.log(res.data);
-
-      setAdministratorNotification(res.data);
-    }
-
-    fetchActiveUser();
-    fetchActiveClass();
-    fetchRecentActivities();
-  }, [dispatch])
+  if (isLoading || !userData.role) {
+    return <Loading />;
+  }
 
   return (
     <PageContainer title="Dashboard" description="Landing Page">
       <Box component="div">
         <Grid container spacing={3}>
           <Grid item xs={12} lg={8}>
-            <BarChart title='Students Enrolled'/>
+            {userData.role === "Administrator" ? (
+              <AdministratorBarChart title='Students Enrolled' />
+            ) : userData.role === "Lecturer" ? (
+              <LecturerBarChart title='Average Students Score' userName={userData.name} />
+            ) : (
+              <StudentBarChart title='Students Score' />
+            )}
           </Grid>
           <Grid item xs={12} lg={4}>
             <Grid container spacing={3}>
               <Grid item xs={12}>
-                <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title='Total Active Users'/>
+                <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Student" : ""} />
               </Grid>
               <Grid item xs={12}>
-                <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title='Total Active Classes'/>
+                <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignment" : ""} />
               </Grid>
             </Grid>
           </Grid>
           <Grid item xs={12} lg={4}>
-            <RecentActivities data={administratorNotification}/>
+            <RecentActivities data={administratorNotification} />
           </Grid>
           <Grid item xs={12} lg={8}>
-            <ToDoList />
+            {userData.role === "Administrator" ? (
+              <AdministratorToDoList />
+            ) : userData.role === "Lecturer" ? (
+              <LecturerToDoList />
+            ) : (
+              <></>
+            )}
           </Grid>
         </Grid>
       </Box>
     </PageContainer>
-  )
-}
+  );
+};
 
 export default Dashboard;

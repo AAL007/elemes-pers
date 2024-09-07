@@ -12,7 +12,7 @@ import {
     DatePicker
 } from '@nextui-org/react';
 import { updateStaff, updateStudent, fetchStaff, fetchStudent, createLecturerCourse, deleteLecturerCourse, fetchLecturerCoursesByStaffId} from '@/app/api/user-management/manage-users';
-import { parseDate } from '@internationalized/date';
+import { DateValue, now, parseAbsoluteToLocal } from '@internationalized/date';
 import { fetchRoles } from '@/app/api/user-management/manage-roles';
 import { RootState } from '@/lib/store';
 import { useDispatch, useSelector } from 'react-redux';
@@ -59,10 +59,10 @@ const EditRole = ({params} : {params : {userId: string}}) => {
   const userData = useSelector((state: RootState) => state.user);
   const [staff, setStaff] = useState<MsStaff>(defaultStaff);
   const [student, setStudent] = useState<MsStudent>(defaultStudent);
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
-  const [userBirthDate, setUserBirthDate] = useState(parseDate(today));
+  const [userBirthDate, setUserBirthDate] = useState(parseAbsoluteToLocal(today));
   const [userAddress, setUserAddress] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
   const [isStaff, setIsStaff] = useState<boolean>(false);
@@ -83,12 +83,22 @@ const EditRole = ({params} : {params : {userId: string}}) => {
     setCourse(new Set(e.target.value.split(",")));
   };
 
+  const convertDate = (date: any) => {
+    return new Date(
+      date.year,
+      date.month - 1,
+      date.day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond
+    ).toISOString();
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log('test')
-    const birthDate = (new Date(userBirthDate.year, userBirthDate.month - 1, userBirthDate.day)).toISOString()
-    console.log(birthDate)
     if(isStaff){
+        const birthDate = convertDate(userBirthDate)
         let updateStaffData: MsStaff = {
             StaffId: staff?.StaffId,
             StaffName: userName,
@@ -145,6 +155,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             }
         })
     }else{
+        const birthDate = convertDate(userBirthDate)
         let updateStudentData: MsStudent = {
             StudentId: student?.StudentId,
             StudentName: userName,
@@ -161,6 +172,8 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             UpdatedDate: new Date().toISOString(),
             ActiveFlag: student?.ActiveFlag,
         }
+
+        console.log(updateStudentData)
         updateStudent(updateStudentData).then((res) => {
             if(res.statusCode == 200){
                 setLoadingStatus(false)
@@ -199,7 +212,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                     setUserEmail(res.data.StudentEmail)
                     setUserAddress(res.data.Address)
                     setUserRole(res.data.RoleId)
-                    setUserBirthDate(parseDate(res.data.BirthDate.split('T')[0]))
+                    setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
                     setIsStaff(false)
                     setStudent(res.data)
                 }
@@ -209,7 +222,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             setUserEmail(res.data.StaffEmail)
             setUserAddress(res.data.Address)
             setUserRole(res.data.RoleId)
-            setUserBirthDate(parseDate(res.data.BirthDate.split('T')[0]))
+            setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
             setIsStaff(true)
             setStaff(res.data)
             if(res.data.RoleId == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
@@ -283,6 +296,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                         isRequired
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
+                        granularity='second'
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
                         showMonthAndYearPickers
