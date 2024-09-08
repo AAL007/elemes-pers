@@ -131,11 +131,50 @@ export type CourseDetail = {
     SessionName: string;
     ContentUrl: string;
     LearningOutcome: string;
+    LectureDate: any;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
     UpdatedDate: any;
     ActiveFlag: boolean;
+}
+
+export type MsAssessment = {
+    AssessmentId: string;
+    AssessmentName: string;
+    AssessmentUrl: string;
+    CourseId: string;
+    ClassId: string;
+    AcademicPeriodId: string;
+    SessionNumber: number;
+    EffectiveStartDate: any;
+    EffectiveEndDate: any;
+    CreatedBy: string;
+    CreatedDate: any;
+    UpdatedBy: string | null;
+    UpdatedDate: any;
+    ActiveFlag: boolean;
+}
+
+export type AssessmentAnswer = {
+    StudentId: string;
+    StudentName: string;
+    AssessmentId: string; 
+    AnswerUrl: string;
+    Score: number;
+    CreatedDate: string;
+    UpdatedDate: string;
+    Chances: number;
+}
+
+export type Score = {
+    StudentId: string;
+    AssessmentId: string;
+    Score: number;
+    CreatedBy: string;
+    CreatedDate: any;
+    UpdatedBy: string | null;
+    UpdatedDate: any;
 }
 
 export type SelectList = {

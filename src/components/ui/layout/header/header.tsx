@@ -10,7 +10,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { useEffect } from 'react';
-import { fetchAdministratorNotification } from '@/app/api/home/dashboard';
+import { fetchAdministratorNotification, fetchLecturerNotification } from '@/app/api/home/dashboard';
 
 interface ItemType {
   toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
@@ -26,18 +26,37 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
 
   useEffect(() => {
     dispatch(loadUserFromStorage())
-    const administratorNotification = async () => {
-      const res = await fetchAdministratorNotification();
-      if(!res.success){
-        alert(res.message);
-        return;
+    console.log(userData.role)
+    if(userData.role == "Administrator"){
+      const administratorNotification = async () => {
+        const res = await fetchAdministratorNotification();
+        if(!res.success){
+          alert(res.message);
+          return;
+        }
+  
+        setMessages(res.data as {Message: string, Entity: string}[]);
       }
+  
+      administratorNotification();
+    }else if(userData.role == "Lecturer"){
+      const lecturerNotification = async () => {
+        const res = await fetchLecturerNotification(userData.id);
+        if(!res.success){
+          alert(res.message);
+          return;
+        }
 
-      setMessages(res.data as {Message: string, Entity: string}[]);
+        console.log(res.data)
+  
+        setMessages(res.data as {Message: string, Entity: string}[]);
+      }
+      
+      lecturerNotification();
+    }else if(userData.role == "Student"){
+
     }
-
-    administratorNotification();
-  }, [dispatch])
+  }, [dispatch, userData.role]);
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',

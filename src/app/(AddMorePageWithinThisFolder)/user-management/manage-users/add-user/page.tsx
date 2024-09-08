@@ -8,22 +8,22 @@ import { Input } from '@nextui-org/react';
 import { createStaff, createStudent, fetchDepartments, createLecturerCourse } from '@/app/api/user-management/manage-users';
 import { fetchCourses } from "@/app/api/enrollment/manage-courses";
 import { Button, DatePicker, Select, SelectItem} from "@nextui-org/react";
-import { fetchRoles } from "@/app/api/user-management/manage-roles";
-import { parseDate } from "@internationalized/date";
+import { fetchRoles } from "@/app/api/user-management/manage-roles";;
 import { generateGUID } from "../../../../../../utils/boilerplate-function";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { MsRole, MsStaff, MsStudent, SelectList, LecturerCourse } from "@/app/api/data-model";
+import { DateValue, now, parseAbsoluteToLocal } from "@internationalized/date";
 // components
 
 const AddRole = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
-  const [userBirthDate, setUserBirthDate] = useState(parseDate(today));
+  const [userBirthDate, setUserBirthDate] = useState(parseAbsoluteToLocal(today));
   const [userAddress, setUserAddress] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
   const [userStudyProgram, setUserStudyProgram] = useState<string>("");
@@ -43,10 +43,22 @@ const AddRole = () => {
     setCourse(new Set(e.target.value.split(",")));
   };
 
+  const convertDate = (date: any) => {
+    return new Date(
+      date.year,
+      date.month - 1,
+      date.day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond
+    ).toISOString();
+  }
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     let selectedRoleCategoryId = roles.find((role) => role.RoleId == userRole)?.RoleCategoryId
-    const birthDate = (new Date(userBirthDate.year, userBirthDate.month - 1, userBirthDate.day)).toISOString()
+    const birthDate = convertDate(userBirthDate);
     if(selectedRoleCategoryId == "22e35ce5-3407-4b11-af22-acb995548a0d"){
         let staff: MsStaff = {
             StaffId: generateGUID(),
@@ -196,6 +208,7 @@ const AddRole = () => {
                         isRequired
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
+                        granularity="second"
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
                         showMonthAndYearPickers

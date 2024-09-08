@@ -17,10 +17,12 @@ import {
   SelectItem,
   Card,
   CardHeader,
+  DatePicker,
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
+import { EyeIcon } from "@/components/icon/eye-icon";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -33,16 +35,15 @@ import {
   updateCourseDetail,
   deleteCourseDetail, 
   updateCourseDetailSessionNumber,
-  uploadFileToAzureBlobStorage,
-  replaceFileInAzureBlobStorage,
-  deleteFileInAzureBlobStorageByUrl
 } from "@/app/api/enrollment/manage-course-detail";
+import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd"
 import { IconDotsVertical } from "@tabler/icons-react"
 import { useOptimistic, useTransition } from "react"
 import { Tooltip } from "@nextui-org/react"
 import { FileUpload } from "@/components/ui/file-upload";
 import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { DateValue, now, parseAbsoluteToLocal } from '@internationalized/date';
 import { resolve } from "path";
 const defaultCourseDetail : CourseDetail = {
   CourseId: "",
@@ -51,6 +52,7 @@ const defaultCourseDetail : CourseDetail = {
   SessionName: "",
   ContentUrl: "",
   LearningOutcome: "",
+  LectureDate: new Date().toISOString(),
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -61,6 +63,7 @@ const defaultCourseDetail : CourseDetail = {
 const ManageCourseDetail = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
+  const today = new Date().toISOString();
   const [isFetchingCourses, setIsFetchingCourses] = React.useState(true);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isEdit, setIsEdit] = React.useState(false);
@@ -70,6 +73,7 @@ const ManageCourseDetail = () => {
   const [courseLabel, setCourseLabel] = React.useState("");
   const [uploadClicked, setUploadClicked] = React.useState(false);
   let [courseDetail, setCourseDetail] = React.useState<CourseDetail | any>(defaultCourseDetail);
+  const [lecturerDate, setLecturerDate] = React.useState(parseAbsoluteToLocal(today));
   const [isLoading, setIsLoading] = React.useState(false);
   const [touched, setTouched] = React.useState(false);
   const [files, setFiles] = React.useState<File[]>([]);
@@ -95,6 +99,18 @@ const ManageCourseDetail = () => {
       setFiles(files);
     }
 
+    const convertDate = (date: any) => {
+      return new Date(
+        date.year,
+        date.month - 1,
+        date.day,
+        date.hour,
+        date.minute,
+        date.second,
+        date.millisecond
+      ).toISOString();
+    }
+
     const fetchFileFromUrl = async (url: string) => {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -109,6 +125,7 @@ const ManageCourseDetail = () => {
         await setExistingFile(resolvedFile);
         setIsEdit(true);
         onOpen();
+        setLecturerDate(parseAbsoluteToLocal(resolvedList.LecturerDate));
         setCourseDetail(resolvedList);
       } catch (error) {
         console.error("Error resolving list:", error);
@@ -140,6 +157,7 @@ const ManageCourseDetail = () => {
                     ContentUrl: z.ContentUrl,
                     File: file,
                     LearningOutcome: z.LearningOutcome,
+                    LecturerDate: z.LectureDate,
                     CreatedBy: z.CreatedBy,
                     CreatedDate: z.CreatedDate,
                     UpdatedBy: z.UpdatedBy,
@@ -200,6 +218,7 @@ const ManageCourseDetail = () => {
           setIsDelete(false);
           setIsCreate(false);
           setFiles([]);
+          setLecturerDate(parseAbsoluteToLocal(today));
           setExistingFile(null);
           setCourseDetail(defaultCourseDetail);
           setUploadClicked(false);
@@ -244,6 +263,16 @@ const ManageCourseDetail = () => {
                       onChange={(e) => {setCourseDetail({...courseDetail, LearningOutcome: e.target.value})}}
                       value={courseDetail.LearningOutcome}
                     />
+                    <DatePicker
+                        isRequired
+                        label="User Birth Date"
+                        className="w-full"
+                        granularity='second'
+                        labelPlacement="inside"
+                        onChange={setLecturerDate}
+                        showMonthAndYearPickers
+                        value={lecturerDate}
+                    />
                     <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
                       <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
                       <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
@@ -264,6 +293,7 @@ const ManageCourseDetail = () => {
                   setIsCreate(false);
                   setFiles([]);
                   setExistingFile(null);
+                  setLecturerDate(parseAbsoluteToLocal(today));
                   setUploadClicked(false);
                   onClose();
                 }}>
@@ -274,7 +304,7 @@ const ManageCourseDetail = () => {
                     setIsLoading(true);
                     try{
                       let sessionId = await generateGUID();
-                      let blobUrl = await uploadFileToAzureBlobStorage(files[0], courseLabel, sessionId);
+                      let blobUrl = await uploadFileToAzureBlobStorage("course-content", files[0], courseLabel, sessionId);
                       let newCourseDetail: CourseDetail = {
                         CourseId: courseId,
                         SessionId: sessionId,
@@ -282,6 +312,7 @@ const ManageCourseDetail = () => {
                         SessionName: courseDetail.SessionName,
                         ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
+                        LectureDate: convertDate(lecturerDate),
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
                         UpdatedBy: null,
@@ -298,6 +329,7 @@ const ManageCourseDetail = () => {
                         setExistingFile(null);
                         setIsCreate(false);
                         setUploadClicked(false);
+                        setLecturerDate(parseAbsoluteToLocal(today));
                         setCourseDetail(defaultCourseDetail);
                         fetchingCourseDetail();
                       })
@@ -311,7 +343,7 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
-                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage(files[0], courseLabel, courseDetail.SessionId) : courseDetail.ContentUrl;
+                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage("course-content", files[0], courseLabel, courseDetail.SessionId) : courseDetail.ContentUrl;
                       let updatedCourseDetail: CourseDetail = {
                         CourseId: courseDetail.CourseId,
                         SessionId: courseDetail.SessionId,
@@ -319,6 +351,7 @@ const ManageCourseDetail = () => {
                         SessionName: courseDetail.SessionName,
                         ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
+                        LectureDate: convertDate(lecturerDate),
                         CreatedBy: courseDetail.CreatedBy,
                         CreatedDate: courseDetail.CreatedDate,
                         UpdatedBy: userData.name,
@@ -332,6 +365,7 @@ const ManageCourseDetail = () => {
                           setExistingFile(null);
                           setUploadClicked(false);
                           setIsEdit(false);
+                          setLecturerDate(parseAbsoluteToLocal(today));
                           setCourseDetail(defaultCourseDetail);
                           fetchingCourseDetail();
                         }else{
@@ -348,7 +382,7 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let res = await deleteFileInAzureBlobStorageByUrl(courseLabel, courseDetail.SessionId);
+                      let res = await deleteFileInAzureBlobStorageByUrl("course-content", courseLabel, courseDetail.SessionId);
                       await deleteCourseDetail(courseId, courseDetail.SessionNumber).then((object: any) => {
                         if(object.success){
                           onClose();
@@ -356,6 +390,7 @@ const ManageCourseDetail = () => {
                           setExistingFile(null);
                           setIsDelete(false);
                           setUploadClicked(false);
+                          setLecturerDate(parseAbsoluteToLocal(today));
                           setCourseDetail(defaultCourseDetail);
                           fetchingCourseDetail();
                         }else{
@@ -460,6 +495,11 @@ const ManageCourseDetail = () => {
                                                             <Tooltip color="danger" content="Delete Course Detail">
                                                                 <span className="text-lg text-danger cursor-pointer active:opacity-50">
                                                                     <DeleteIcon onClick={() => {handleDeleteClick(list)}}/>
+                                                                </span>
+                                                            </Tooltip>
+                                                            <Tooltip content="Preview Assessment">
+                                                                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+                                                                  <EyeIcon onClick={() => {window.open(list.ContentUrl, '_blank')}}/>
                                                                 </span>
                                                             </Tooltip>
                                                         </CardHeader>

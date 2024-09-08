@@ -1,6 +1,4 @@
-import { iconClasses } from "@mui/material";
 import {
-  IconAffiliate,
   IconBook2,
   IconCertificate,
   IconCertificate2,
@@ -10,6 +8,9 @@ import {
   IconUserPlus,
   IconBooks,
   IconMicroscope,
+  IconClipboard,
+  IconClipboardText,
+  IconScoreboard,
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -32,21 +33,26 @@ const Menuitems = [
   },
   {
     navlabel: true,
-    subheader: "Content Management",
+    subheader: "Assignment",
     roles: ["lecturer"],
   },
   {
     id: uniqueId(),
-    title: "Content",
-    icon: IconLayoutDashboard,
-    href: "/content-management/content",
+    title: "Assignment Management",
+    icon: IconClipboard,
+    href: "/assignment/assignment-management",
+    roles: ["lecturer"],
+  },
+  {
+    navlabel: true,
+    subheader: "Scoring",
     roles: ["lecturer"],
   },
   {
     id: uniqueId(),
-    title: "Assignment",
-    icon: IconLayoutDashboard,
-    href: "/content-management/assignment",
+    title: "Student Result",
+    icon: IconScoreboard,
+    href: "/scoring/student-result",
     roles: ["lecturer"],
   },
   {

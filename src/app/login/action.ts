@@ -4,6 +4,7 @@ import { createClient } from '../../../utils/supabase/client'
 import { setUserData, userState } from '@/lib/user-slice'
 
 interface userData {
+  id: string;
   email: string;
   name: string;
   role: string;
@@ -44,6 +45,7 @@ async function getUserData(email: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase.from('MsStaff').select(`
+    StaffId,
     StaffName,
     StaffEmail,
     RoleId
@@ -51,6 +53,7 @@ async function getUserData(email: string) {
 
   if (error) {
     const {data, error} = await supabase.from('MsStudent').select(`
+      StudentId,
       StudentName, 
       StudentEmail,
       RoleId
@@ -66,6 +69,7 @@ async function getUserData(email: string) {
     }
 
     let user: userData = {
+      id: data.StudentId,
       email: data.StudentEmail,
       name: data.StudentName,
       role: roleAndRoleCategory.object?.roleName,
@@ -83,6 +87,7 @@ async function getUserData(email: string) {
     }
 
   let user: userData = {
+    id: data.StaffId,
     email: data.StaffEmail,
     name: data.StaffName,
     role: roleAndRoleCategory.object?.roleName,
