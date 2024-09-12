@@ -11,6 +11,7 @@ import {
   IconClipboard,
   IconClipboardText,
   IconScoreboard,
+  IconCalendarTime
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
@@ -91,6 +92,13 @@ const Menuitems = [
     title: "Manage Course Detail",
     icon: IconCertificate2,
     href: "/enrollment/manage-course-detail",
+    roles: ["administrator"],
+  },
+  {
+    id: uniqueId(),
+    title: "Manage Session Schedule",
+    icon: IconCalendarTime,
+    href: "/enrollment/manage-session-schedule",
     roles: ["administrator"],
   },
   {
