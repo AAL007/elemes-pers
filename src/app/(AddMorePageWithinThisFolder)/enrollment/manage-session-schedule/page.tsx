@@ -30,6 +30,8 @@ import {
   Spinner,
   Select,
   SelectItem,
+  Tooltip,
+  DatePicker,
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
@@ -40,19 +42,19 @@ import { EyeIcon } from "@/components/icon/eye-icon";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { CourseDetail, SelectList } from "@/app/api/data-model";
+import { SelectList, SessionSchedule, SessionScheduleResponse } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
 import { 
-  fetchCourseDetail, 
-  fetchCourse, 
-  createCourseDetail, 
-  updateCourseDetail,
-  deleteCourseDetail, 
-} from "@/app/api/enrollment/manage-course-detail";
-import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
-import { Tooltip } from "@nextui-org/react"
-import { FileUpload } from "@/components/ui/file-upload";
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+  fetchSessionSchedule,
+  createsessionSchedule,
+  updateSessionSchedule,
+  deleteSessionSchedule,
+} from "@/app/api/enrollment/manage-session-schedule";
+import { fetchDepartments } from "@/app/api/user-management/manage-users";
+import { fetchClasses } from "@/app/api/enrollment/manage-classes";
+import { fetchActivePeriod } from "@/app/api/assignment/assignment-management";
+import { fetchCoursesByDepartmentId } from "@/app/api/enrollment/manage-classes";
+import { DateValue, now, parseAbsoluteToLocal } from "@internationalized/date";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -62,7 +64,9 @@ const statusColorMap: Record<string, ChipProps["color"]>  = {
 const columns = [
   {name: "SESSION NAME", uid: "SessionName", sortable: true},
   {name: "SESSION NUMBER", uid: "SessionNumber", sortable: true},
-  {name: "LEARNING OUTCOME", uid: "LearningOutcome", sortable: true},
+  {name: "SESSION DATE", uid: "SessionDate", sortable: true},
+  {name: "CLASSROOM", uid: "Classroom", sortable: true},
+  {name: "ONLINE MEETING URL", uid: "OnlineMeetingUrl", sortable: true},
   {name: "CREATED BY", uid: "CreatedBy"},
   {name: "UPDATED BY", uid: "UpdatedBy"},
   {name: "STATUS", uid: "ActiveFlag", sortable: true},
@@ -74,19 +78,18 @@ const statusOptions = [
   {name: "Inactive", uid: "inactive"},
 ];
 
-const INITIAL_VISIBLE_COLUMNS = ["SessionName", "SessionNumber", "LearningOutcome", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
+const INITIAL_VISIBLE_COLUMNS = ["SessionName", "SessionNumber", "SessionDate", "Classroom", "OnlineMeetingUrl", "CreatedBy", "UpdatedBy", "ActiveFlag", "Actions"];
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const defaultCourseDetail : CourseDetail = {
-  CourseId: "",
+const defaultSessionSchedule : SessionSchedule = {
   SessionId: "",
-  SessionNumber: 0,
-  SessionName: "",
-  ContentUrl: "",
-  LearningOutcome: "",
+  ClassId: "",
+  SessionDate: new Date().toISOString(),
+  Classroom: "",
+  OnlineMeetingUrl: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -94,9 +97,10 @@ const defaultCourseDetail : CourseDetail = {
   ActiveFlag: false,
 }
 
-const ManageCourseDetail = () => {
+const ManageSessionSchedule = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
+  const today = new Date().toISOString();
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
@@ -106,81 +110,127 @@ const ManageCourseDetail = () => {
     column: "SessionName",
     direction: "ascending",
   });
-  const [isFetchingCourses, setIsFetchingCourses] = React.useState(true);
+  const [isFetchingSessionSchedules, setIsFetchingSessionSchedules] = React.useState(true);
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isEdit, setIsEdit] = React.useState(false);
   const [isDelete, setIsDelete] = React.useState(false);
   const [isCreate, setIsCreate] = React.useState(false);
+  const [sessionDate, setSessionDate] = React.useState(parseAbsoluteToLocal(today));
   const [courseId, setCourseId] = React.useState("");
-  const [courseLabel, setCourseLabel] = React.useState("");
+  const [classId, setClassId] = React.useState("");
+  const [departmentId, setDepartmentId] = React.useState("");
+  const [academicPeriodId, setAcademicPeriodId] = React.useState("");
   const [uploadClicked, setUploadClicked] = React.useState(false);
-  let [courseDetail, setCourseDetail] = React.useState<CourseDetail | any>(defaultCourseDetail);
+  let [sessionSchedule, setSessionSchedule] = React.useState<SessionSchedule | any>(defaultSessionSchedule);
   const [isLoading, setIsLoading] = React.useState(false);
   const [touched, setTouched] = React.useState(false);
-  const [files, setFiles] = React.useState<File[]>([]);
-  const [existingFile, setExistingFile] = React.useState<File | null>(null);
-  const [courseDetails, setCourseDetails] = React.useState<any[]>([]);
+  const [touched2, setTouched2] = React.useState(false);
+  const [touched3, setTouched3] = React.useState(false);
+  const [sessionSchedules, setSessionSchedules] = React.useState<SessionScheduleResponse[]>([]);
   const [courses, setCourses] = React.useState<SelectList[]>([]);
-  const isValid = courseId !== ""
+  const [classes, setClasses] = React.useState<SelectList[]>([]);
+  const [departments, setDepartments] = React.useState<SelectList[]>([]);
+  const isValid = departmentId !== ""
+  const isValid2 = classId !== ""
+  const isValid3 = courseId !== ""
+  
+  const convertDate = (date: any) => {
+    return new Date(
+      date.year,
+      date.month - 1,
+      date.day,
+      date.hour,
+      date.minute,
+      date.second,
+      date.millisecond
+    ).toISOString();
+  }
 
-    const handleFileUpload = (files: File[]) => {
-      setFiles(files);
-    }
-
-    const fetchFileFromUrl = async (url: string) => {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const fileName = url.split("/").pop();
-      return new File([blob], fileName || "file");
-    }
-
-    const fetchingCourseDetail = async () => {
-        setCourseDetails([]);
-        setIsFetchingCourses(true);
-        await fetchCourseDetail(courseId).then((object: any) => {
-            let courseDetails = object.data.map((z: any) => {
-              const file = fetchFileFromUrl(z.ContentUrl);
+    const fetchingSessionSchedules = async () => {
+        setSessionSchedules([]);
+        setIsFetchingSessionSchedules(true);
+        await fetchSessionSchedule(classId, courseId).then((object: any) => {
+            let sessionSchedules = object.data.map((z: any) => {
                 return {
-                    CourseId: z.CourseId,
-                    SessionId: z.SessionId,
-                    SessionNumber: z.SessionNumber.toString(),
-                    SessionName: z.SessionName,
-                    ContentUrl: z.ContentUrl,
-                    File: file,
-                    LearningOutcome: z.LearningOutcome,
-                    CreatedBy: z.CreatedBy,
-                    CreatedDate: z.CreatedDate,
-                    UpdatedBy: z.UpdatedBy,
-                    UpdatedDate: z.UpdatedDate,
-                    ActiveFlag: z.ActiveFlag
+                    SessionId: z.sessionId,
+                    SessionName: z.sessionName,
+                    SessionNumber: z.sessionNumber,
+                    ClassId: z.classId,
+                    SessionDate: z.sessionDate,
+                    Classroom: z.classroom,
+                    OnlineMeetingUrl: z.onlineMeetingUrl,
+                    CreatedDate: z.createdDate,
+                    CreatedBy: z.createdBy,
+                    UpdatedDate: z.updatedDate,
+                    UpdatedBy: z.updatedBy,
+                    ActiveFlag: parseAbsoluteToLocal(z.sessionDate) > parseAbsoluteToLocal(today) ? true : false,
                 }
             })
-            setCourseDetails(courseDetails);
+            setSessionSchedules(sessionSchedules);
         })
-        setIsFetchingCourses(false);
+        setIsFetchingSessionSchedules(false);
     }
 
+  const fetchingDepartments = async() => {
+    await fetchDepartments().then((object: any) => {
+      const res = object.data.map((z: any) => {
+          return{
+              key: z.DepartmentId,
+              label: z.DepartmentName,
+          }
+      })
+      setDepartments(res)
+      if(res.length > 0) setDepartmentId(res[0].key)
+    })
+  }
+
+  const fetchingActivePeriod = async() => {
+    await fetchActivePeriod().then((object: any) => {
+      setAcademicPeriodId(object.data[0].Key);
+    })
+  }
+  
   useEffect(() => {
     dispatch(loadUserFromStorage());
-    fetchCourse().then((object: any) => {
-        const courses = object.data.map((z: any) => {
-            return {
-                key: z.CourseId,
-                label: z.CourseName
-            }
-        })
-        setCourses(courses);
-        setCourseId(courses[0].key);
-    })
+    setIsFetchingSessionSchedules(true);
+    fetchingActivePeriod();
+    fetchingDepartments();
   }, [dispatch]);
 
-  useEffect(() => {
-    fetchingCourseDetail();
-  }, [courseId])
+  const fetchingClasses = async() => {
+    await fetchClasses(departmentId, academicPeriodId).then((object: any) => {
+      const res = object.data.map((z: any) => {
+        return {
+          key: z.ClassId,
+          label: z.ClassName,
+        }
+      })
+      setClasses(res);
+      if(res.length > 0) setClassId(res[0].key);
+    });
+  }
+
+  const fetchingCourses = async() => {
+    await fetchCoursesByDepartmentId(departmentId).then((object: any) => {
+      const res = object.data.map((z: any) => {
+        return {
+          key: z.CourseId,
+          label: z.MsCourse.CourseName,
+        }
+      })
+      setCourses(res);
+      if(res.length > 0) setCourseId(res[0].key);
+    })
+  }
 
   useEffect(() => {
-    setCourseLabel(courses.find((z) => z.key === courseId)?.label || "");
-  }, [courseId])
+    fetchingClasses();
+    fetchingCourses();
+  }, [departmentId])
+
+  useEffect(() => {
+    fetchingSessionSchedules();
+  }, [classId, courseId])
 
   const [page, setPage] = React.useState(1);
 
@@ -193,7 +243,7 @@ const ManageCourseDetail = () => {
   }, [visibleColumns]);
 
   const filteredItems = React.useMemo(() => {
-    let filteredSessions = [...courseDetails];
+    let filteredSessions = [...sessionSchedules];
 
     if (hasSearchFilter) {
       filteredSessions = filteredSessions.filter((session) =>
@@ -207,7 +257,7 @@ const ManageCourseDetail = () => {
     }
 
     return filteredSessions;
-  }, [courseDetails, filterValue, statusFilter]);
+  }, [sessionSchedules, filterValue, statusFilter]);
 
   const pages = Math.ceil(filteredItems.length / rowsPerPage);
 
@@ -220,16 +270,16 @@ const ManageCourseDetail = () => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof CourseDetail];
-      const second = b[sortDescriptor.column as keyof CourseDetail];
+      const first = a[sortDescriptor.column as keyof SessionScheduleResponse];
+      const second = b[sortDescriptor.column as keyof SessionScheduleResponse];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((session: CourseDetail, columnKey: React.Key) => {
-    const cellValue = session[columnKey as keyof CourseDetail];
+  const renderCell = React.useCallback((session: SessionScheduleResponse, columnKey: React.Key) => {
+    const cellValue = session[columnKey as keyof SessionScheduleResponse];
 
     switch (columnKey) {
       case "SessionName":
@@ -246,11 +296,25 @@ const ManageCourseDetail = () => {
               <p className="text-bold text-tiny capitalize text-default-400">{session.SessionNumber}</p>
               </div>
           );
-      case "LearningOutcome":
+      case "SessionDate":
         return (
           <div className="flex flex-col">
           {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-          <p className="text-bold text-tiny capitalize text-default-400">{session.LearningOutcome}</p>
+          <p className="text-bold text-tiny capitalize text-default-400">{session.SessionDate}</p>
+          </div>
+        );
+        case "Classroom":
+          return (
+            <div className="flex flex-col">
+            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
+            <p className="text-bold text-tiny capitalize text-default-400">{session.Classroom}</p>
+            </div>
+          );
+          case "OnlineMeetingUrl":
+        return (
+          <div className="flex flex-col">
+          {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
+          <p className="text-bold text-tiny capitalize text-default-400">{session.OnlineMeetingUrl ?? "N/A"}</p>
           </div>
         );
       case "CreatedBy":
@@ -278,18 +342,13 @@ const ManageCourseDetail = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Course">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setCourseDetail(session); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setSessionDate(parseAbsoluteToLocal(session.SessionDate)); setSessionSchedule(session); onOpen()}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Course">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon onClick={() => {setIsDelete(true); setCourseDetail(session); onOpen()}}/>
+                <DeleteIcon onClick={() => {setIsDelete(true); setSessionDate(parseAbsoluteToLocal(session.SessionDate)) ;setSessionSchedule(session); onOpen()}}/>
               </span>
-            </Tooltip>
-            <Tooltip content="Preview Assessment">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EyeIcon onClick={() => {window.open(session.ContentUrl, '_blank')}}/>
-                </span>
             </Tooltip>
           </div>
         );
@@ -324,7 +383,7 @@ const ManageCourseDetail = () => {
           <Input
             isClearable
             className="w-full sm:max-w-[44%]"
-            placeholder="Search session..."
+            placeholder="Search session schedule..."
             startContent={<SearchIcon />}
             value={filterValue}
             onClear={() => onClear()}
@@ -379,7 +438,7 @@ const ManageCourseDetail = () => {
           </div>
         </div>
         <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">Total {courseDetails.length} sessions</span>
+          <span className="text-default-400 text-small">Total {sessionSchedules.length} sessions</span>
           <label className="flex items-center text-default-400 text-small">
             Rows per page:
             <select
@@ -437,9 +496,8 @@ const ManageCourseDetail = () => {
           setIsEdit(false);
           setIsDelete(false);
           setIsCreate(false);
-          setFiles([]);
-          setExistingFile(null);
-          setCourseDetail(defaultCourseDetail);
+          setSessionDate(parseAbsoluteToLocal(today));
+          setSessionSchedule(defaultSessionSchedule);
           setUploadClicked(false);
           onOpenChange()
         }}
@@ -454,52 +512,47 @@ const ManageCourseDetail = () => {
                   <>
                     <Input
                       autoFocus
-                      label="Session Name"
-                      placeholder="Enter session name"
+                      label="Classroom"
+                      placeholder="Enter classroom"
                       variant="bordered"
                       onClick={async () => await setUploadClicked(false)}
-                      onChange={(e) => {setCourseDetail({...courseDetail, SessionName: e.target.value})}}
-                      value={courseDetail.SessionName}
-                    />
-                    <Input
-                      type="number"
-                      autoFocus
-                      label="Session Number"
-                      placeholder="Enter session number"
-                      variant="bordered"
-                      onClick={async () => await setUploadClicked(false)}
-                      onChange={(e) => {setCourseDetail({...courseDetail, SessionNumber: e.target.value})}}
-                      value={courseDetail.SessionNumber}
+                      onChange={(e) => {setSessionSchedule({...sessionSchedule, Classroom: e.target.value})}}
+                      value={sessionSchedule.Classroom}
                     />
                     <Input
                       autoFocus
-                      label="Learning Outcome"
-                      placeholder="Enter learning outcome"
+                      label="Online Meeting URL"
+                      placeholder="Enter online meeting url"
                       variant="bordered"
                       onClick={async () => await setUploadClicked(false)}
-                      onChange={(e) => {setCourseDetail({...courseDetail, LearningOutcome: e.target.value})}}
-                      value={courseDetail.LearningOutcome}
+                      onChange={(e) => {setSessionSchedule({...sessionSchedule, OnlineMeetingUrl: e.target.value})}}
+                      value={sessionSchedule.OnlineMeetingUrl}
                     />
-                    <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
-                      <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
-                      <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
-                      <FileUpload existingFile={existingFile} onChange={handleFileUpload} />
-                    </div>
+                    <DatePicker
+                      isRequired
+                      label="User Birth Date"
+                      className="w-full"
+                      variant="bordered"
+                      granularity="second"
+                      labelPlacement="inside"
+                      onChange={setSessionDate}
+                      showMonthAndYearPickers
+                      value={sessionDate}
+                    />
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
-                    <p>Are you sure you want to delete <b>{courseDetail.SessionName}</b> ?</p>
+                    <p>Are you sure you want to delete <b>{sessionSchedule.SessionName}</b> ?</p>
                   </div>
                 )}
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
-                  setCourseDetail(defaultCourseDetail);
+                  setSessionDate(parseAbsoluteToLocal(today));
+                  setSessionSchedule(defaultSessionSchedule);
                   setIsEdit(false);
                   setIsDelete(false);
                   setIsCreate(false);
-                  setFiles([]);
-                  setExistingFile(null);
                   setUploadClicked(false);
                   onClose();
                 }}>
@@ -509,33 +562,30 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let sessionId = await generateGUID();
-                      let blobUrl = await uploadFileToAzureBlobStorage("course-content", files[0], courseLabel, sessionId);
-                      let newCourseDetail: CourseDetail = {
-                        CourseId: courseId,
-                        SessionId: sessionId,
-                        SessionNumber: parseInt(courseDetail.SessionNumber),
-                        SessionName: courseDetail.SessionName,
-                        ContentUrl: blobUrl,
-                        LearningOutcome: courseDetail.LearningOutcome,
+                      let newSessionSchedule: SessionSchedule = {
+                        ClassId: classId,
+                        SessionId: sessionSchedule.SessionId,
+                        SessionDate: convertDate(sessionDate),
+                        Classroom: sessionSchedule.Classroom,
+                        OnlineMeetingUrl: sessionSchedule.OnlineMeetingUrl,
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
                         UpdatedBy: null,
                         UpdatedDate: new Date(0).toISOString(),
                         ActiveFlag: true,
                       }
-                      await createCourseDetail(newCourseDetail).then((object: any) => {
+                      // console.log(newSessionSchedule)
+                      await createsessionSchedule(newSessionSchedule).then((object: any) => {
                         if(!object.success){
                             alert(object.message)
                             return;
                         }
                         onClose();
-                        setFiles([]);
-                        setExistingFile(null);
                         setIsCreate(false);
                         setUploadClicked(false);
-                        setCourseDetail(defaultCourseDetail);
-                        fetchingCourseDetail();
+                        setSessionDate(parseAbsoluteToLocal(today));
+                        setSessionSchedule(defaultSessionSchedule);
+                        fetchingSessionSchedules();
                       })
                     }finally{
                       setIsLoading(false);
@@ -547,30 +597,27 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
-                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage("course-content", files[0], courseLabel, courseDetail.SessionId) : courseDetail.ContentUrl;
-                      let updatedCourseDetail: CourseDetail = {
-                        CourseId: courseDetail.CourseId,
-                        SessionId: courseDetail.SessionId,
-                        SessionNumber: parseInt(courseDetail.SessionNumber),
-                        SessionName: courseDetail.SessionName,
-                        ContentUrl: blobUrl,
-                        LearningOutcome: courseDetail.LearningOutcome,
-                        CreatedBy: courseDetail.CreatedBy,
-                        CreatedDate: courseDetail.CreatedDate,
+                      let updatedSessionSchedule: SessionSchedule = {
+                        ClassId: classId,
+                        SessionId: sessionSchedule.SessionId,
+                        SessionDate: convertDate(sessionDate),
+                        Classroom: sessionSchedule.Classroom,
+                        OnlineMeetingUrl: sessionSchedule.OnlineMeetingUrl,
+                        CreatedBy: sessionSchedule.CreatedBy,
+                        CreatedDate: sessionSchedule.CreatedDate,
                         UpdatedBy: userData.name,
                         UpdatedDate: new Date().toISOString(),
-                        ActiveFlag: courseDetail.ActiveFlag,
+                        ActiveFlag: sessionSchedule.ActiveFlag,
                       }
-                      console.log(updatedCourseDetail)
-                      await updateCourseDetail(updatedCourseDetail).then((object: any) => {
+                      // console.log(updatedSessionSchedule)
+                      await updateSessionSchedule(updatedSessionSchedule).then((object: any) => {
                         if(object.success) {
                           onClose();
-                          setFiles([]);
-                          setExistingFile(null);
                           setUploadClicked(false);
                           setIsEdit(false);
-                          setCourseDetail(defaultCourseDetail);
-                          fetchingCourseDetail();
+                          setSessionDate(parseAbsoluteToLocal(today));
+                          setSessionSchedule(defaultSessionSchedule);
+                          fetchingSessionSchedules();
                         }else{
                           alert(object.message);
                         }
@@ -585,16 +632,14 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let res = await deleteFileInAzureBlobStorageByUrl("course-content", courseLabel, courseDetail.SessionId);
-                      await deleteCourseDetail(courseDetail.SessionId).then((object: any) => {
+                      await deleteSessionSchedule(sessionSchedule.SessionId, classId).then((object: any) => {
                         if(object.success){
                           onClose();
-                          setFiles([]);
-                          setExistingFile(null);
                           setIsDelete(false);
                           setUploadClicked(false);
-                          setCourseDetail(defaultCourseDetail);
-                          fetchingCourseDetail();
+                          setSessionDate(parseAbsoluteToLocal(today));
+                          setSessionSchedule(defaultSessionSchedule);
+                          fetchingSessionSchedules();
                         }else{
                           alert(object.message);
                         }
@@ -614,18 +659,60 @@ const ManageCourseDetail = () => {
       <Box component="div">
         <div>
             <Grid container className="mt-0.5 mb-3">
-                <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                <Grid item xs={4} sm={4} md={4} lg={4} className="mb-2">
+                  <Select
+                      required
+                      label= "Department"
+                      variant="bordered"
+                      placeholder="Select a department"
+                      errorMessage={isValid || !touched ? "" : "You need to select a department"}
+                      isInvalid={isValid || !touched ? false: true}
+                      className="w-full sm:max-w-[94%]"
+                      selectedKeys={[departmentId]}
+                      onChange={(e) => setDepartmentId(e.target.value)}
+                      onClose={() => setTouched(true)}
+                      value={departmentId}
+                    >
+                      {departments.map((department) => (
+                        <SelectItem key={department.key}>
+                          {department.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                </Grid>
+                <Grid item xs={4} sm={4} md={4} lg={4} className="mb-2">
+                  <Select
+                      required
+                      label= "Class"
+                      variant="bordered"
+                      placeholder="Select a class"
+                      errorMessage={isValid2 || !touched2 ? "" : "You need to select a class"}
+                      isInvalid={isValid2 || !touched2 ? false: true}
+                      className="w-full sm:max-w-[94%]"
+                      selectedKeys={[classId]}
+                      onChange={(e) => setClassId(e.target.value)}
+                      onClose={() => setTouched2(true)}
+                      value={classId}
+                    >
+                      {classes.map((classObj) => (
+                        <SelectItem key={classObj.key}>
+                          {classObj.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
+                </Grid>
+                <Grid item xs={4} sm={4} md={4} lg={4} className="mb-2">
                   <Select
                       required
                       label= "Course"
                       variant="bordered"
                       placeholder="Select a course"
-                      errorMessage={isValid || !touched ? "" : "You need to select a course"}
-                      isInvalid={isValid || !touched ? false: true}
+                      errorMessage={isValid3 || !touched3 ? "" : "You need to select a course"}
+                      isInvalid={isValid3 || !touched3 ? false: true}
                       className="w-full sm:max-w-[94%]"
                       selectedKeys={[courseId]}
                       onChange={(e) => setCourseId(e.target.value)}
-                      onClose={() => setTouched(true)}
+                      onClose={() => setTouched3(true)}
                       value={courseId}
                     >
                       {courses.map((course) => (
@@ -665,7 +752,7 @@ const ManageCourseDetail = () => {
             </TableColumn>
           )}
         </TableHeader>
-        <TableBody isLoading={isFetchingCourses} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No sessions found"} items={sortedItems}>
+        <TableBody isLoading={isFetchingSessionSchedules} loadingContent={<Spinner label="Loading ..."/>} emptyContent={"No session schedules found"} items={sortedItems}>
           {(item) => (
             <TableRow key={item.SessionId}>
               {(columnKey) => <TableCell>{renderCell(item, columnKey)}</TableCell>}
@@ -677,4 +764,4 @@ const ManageCourseDetail = () => {
   );
 }
 
-export default ManageCourseDetail;
+export default ManageSessionSchedule;

@@ -176,7 +176,7 @@ export async function deleteClass(classId: string) {
 }
   
 export async function fetchClasses(departmentId: string, academicPeriodId: string) {
-    const { data, error } = await supabase.from('Class').select().eq('DepartmentId', departmentId).eq('AcademicPeriodId', academicPeriodId)
+    const { data, error } = await supabase.from('Class').select().eq('DepartmentId', departmentId).eq('AcademicPeriodId', academicPeriodId).order('ClassName', {ascending: true})
     if (error){
         console.log('error', error); 
         let object = {

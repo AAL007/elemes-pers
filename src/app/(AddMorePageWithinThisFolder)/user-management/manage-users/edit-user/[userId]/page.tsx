@@ -296,6 +296,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                         isRequired
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
+                        variant='bordered'
                         granularity='second'
                         labelPlacement="inside"
                         onChange={setUserBirthDate}

@@ -131,11 +131,38 @@ export type CourseDetail = {
     SessionName: string;
     ContentUrl: string;
     LearningOutcome: string;
-    LectureDate: any;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
     UpdatedDate: any;
+    ActiveFlag: boolean;
+}
+
+export type SessionSchedule = {
+    SessionId: string;
+    ClassId: string;
+    SessionDate: any;
+    Classroom: string;
+    OnlineMeetingUrl: string;
+    CreatedDate: any;
+    CreatedBy: string;
+    UpdatedDate: any;
+    UpdatedBy: string | null;
+    ActiveFlag: boolean;
+}
+
+export type SessionScheduleResponse= {
+    SessionId: string;
+    SessionName: string;
+    SessionNumber: number;
+    ClassId: string;
+    SessionDate: any;
+    Classroom: string;
+    OnlineMeetingUrl: string;
+    CreatedDate: any;
+    CreatedBy: string;
+    UpdatedDate: any;
+    UpdatedBy: string | null;
     ActiveFlag: boolean;
 }
 

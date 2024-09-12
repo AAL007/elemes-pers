@@ -116,7 +116,7 @@ const StudentResult = () => {
 
   useEffect(() => {
     setIsFetchingStudentAnswer(true);
-    fetchLecturerClassCourse(userData.name, academicPeriod).then((object: any) => {
+    fetchLecturerClassCourse(userData.id, academicPeriod).then((object: any) => {
         const classes = object.data.map((z: any) => {
           return {
             key: z.ClassKey,
