@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -22,6 +24,7 @@ import { color } from "framer-motion";
 const Profile = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
+  const [profilePicture, setProfilePicture] = useState("");
   const [anchorEl2, setAnchorEl2] = useState(null);
   const [isLogout, setIsLogout] = useState(false);
   const handleClick2 = (event: any) => {
@@ -35,6 +38,15 @@ const Profile = () => {
     dispatch(loadUserFromStorage());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedProfilePicture = localStorage.getItem("profilePicture");
+      if (storedProfilePicture) {
+        setProfilePicture(storedProfilePicture);
+      }
+    }
+  }, []);
+
   return (
     <Box component="div">
       <Button
@@ -45,7 +57,7 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
-          src={localStorage.getItem("profilePicture") ?? ""}
+          src={profilePicture}
           alt="image"
           sx={{
             width: 35,
