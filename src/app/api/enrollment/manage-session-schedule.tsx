@@ -13,6 +13,14 @@ export async function fetchCourse() {
     return {success: true, data: data, message: 'Data fetched successfully!'}
 }
 
+export async function fetchSessions(courseId: string){
+    const { data, error } = await supabase.from('CourseDetail').select('SessionId, SessionNumber').eq('CourseId', courseId)
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
 export async function fetchSessionSchedule(classId: string, courseId: string){
     const { data, error } = await supabase.rpc('fetch_session_schedule', {class_id: classId, course_id: courseId})
     if(error){

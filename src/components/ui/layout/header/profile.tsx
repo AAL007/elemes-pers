@@ -45,7 +45,7 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
-          src=""
+          src={localStorage.getItem("profilePicture") ?? ""}
           alt="image"
           sx={{
             width: 35,
@@ -78,7 +78,7 @@ const Profile = () => {
           <ListItemIcon>
             <IconUser width={20} />
           </ListItemIcon>
-          <ListItemText>My Profile</ListItemText>
+          <ListItemText><Link href={'/edit-profile'}>My Profile</Link></ListItemText>
         </MenuItem>
         {/* <MenuItem>
           <ListItemIcon>
@@ -86,12 +86,12 @@ const Profile = () => {
           </ListItemIcon>
           <ListItemText>My Account</ListItemText>
         </MenuItem> */}
-        <MenuItem>
+        {/* <MenuItem>
           <ListItemIcon>
             <IconListCheck width={20} />
           </ListItemIcon>
           <ListItemText>My Tasks</ListItemText>
-        </MenuItem>
+        </MenuItem> */}
         <Box component="div" mt={1} py={1} px={2}>
           <Button
             href="#"

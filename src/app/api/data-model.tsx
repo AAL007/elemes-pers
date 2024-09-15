@@ -143,7 +143,7 @@ export type SessionSchedule = {
     ClassId: string;
     SessionDate: any;
     Classroom: string;
-    OnlineMeetingUrl: string;
+    OnlineMeetingUrl: string | null;
     CreatedDate: any;
     CreatedBy: string;
     UpdatedDate: any;
@@ -213,9 +213,12 @@ export type MsStaff = {
     StaffId: string;
     StaffName: string;
     StaffEmail: string;
+    PhoneNumber: string;
     BirthDate: any;
     Address: string;
-    RoleId: string;    
+    RoleId: string;   
+    Gender: string;
+    ProfilePictureUrl: string | null; 
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
@@ -227,11 +230,14 @@ export type MsStudent = {
     StudentId: string;
     StudentName: string;
     StudentEmail: string;
+    PhoneNumber: string;
     BirthDate: any;
     Address: string;
     AcadYear: string;
     RoleId: string;
-    LearningStyleId: string;
+    Gender: string;
+    ProfilePictureUrl: string | null;
+    LearningStyleId: string | null;
     DepartmentId: string;
     CreatedBy: string;
     CreatedDate: any;

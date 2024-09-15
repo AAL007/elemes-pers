@@ -49,6 +49,7 @@ import {
   createsessionSchedule,
   updateSessionSchedule,
   deleteSessionSchedule,
+  fetchSessions
 } from "@/app/api/enrollment/manage-session-schedule";
 import { fetchDepartments } from "@/app/api/user-management/manage-users";
 import { fetchClasses } from "@/app/api/enrollment/manage-classes";
@@ -89,7 +90,7 @@ const defaultSessionSchedule : SessionSchedule = {
   ClassId: "",
   SessionDate: new Date().toISOString(),
   Classroom: "",
-  OnlineMeetingUrl: "",
+  OnlineMeetingUrl: null,
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -118,6 +119,7 @@ const ManageSessionSchedule = () => {
   const [sessionDate, setSessionDate] = React.useState(parseAbsoluteToLocal(today));
   const [courseId, setCourseId] = React.useState("");
   const [classId, setClassId] = React.useState("");
+  const [sessionId, setSessionId] = React.useState("");
   const [departmentId, setDepartmentId] = React.useState("");
   const [academicPeriodId, setAcademicPeriodId] = React.useState("");
   const [uploadClicked, setUploadClicked] = React.useState(false);
@@ -126,13 +128,16 @@ const ManageSessionSchedule = () => {
   const [touched, setTouched] = React.useState(false);
   const [touched2, setTouched2] = React.useState(false);
   const [touched3, setTouched3] = React.useState(false);
+  const [touched4, setTouched4] = React.useState(false);
   const [sessionSchedules, setSessionSchedules] = React.useState<SessionScheduleResponse[]>([]);
   const [courses, setCourses] = React.useState<SelectList[]>([]);
   const [classes, setClasses] = React.useState<SelectList[]>([]);
   const [departments, setDepartments] = React.useState<SelectList[]>([]);
+  const [sessions, setSessions] = React.useState<SelectList[]>([]);
   const isValid = departmentId !== ""
   const isValid2 = classId !== ""
   const isValid3 = courseId !== ""
+  const isValid4 = sessionId !== ""
   
   const convertDate = (date: any) => {
     return new Date(
@@ -223,6 +228,20 @@ const ManageSessionSchedule = () => {
     })
   }
 
+  const fetchingSession = async() => {
+    await fetchSessions(courseId).then((object: any) => {
+      const res = object.data.map((z: any) => {
+        return {
+          key: z.SessionId,
+          label: z.SessionNumber,
+        }
+      })
+      console.log(res)
+      setSessions(res);
+      // if(res.length > 0) setSessionId(res[0].key);
+    })
+  }
+
   useEffect(() => {
     fetchingClasses();
     fetchingCourses();
@@ -231,6 +250,10 @@ const ManageSessionSchedule = () => {
   useEffect(() => {
     fetchingSessionSchedules();
   }, [classId, courseId])
+
+  useEffect(() => {
+    fetchingSession();
+  }, [courseId])
 
   const [page, setPage] = React.useState(1);
 
@@ -510,6 +533,25 @@ const ManageSessionSchedule = () => {
               <ModalBody>
                 {(isCreate || isEdit) ? (
                   <>
+                    <Select
+                      required
+                      label= "Session"
+                      variant="bordered"
+                      placeholder="Select a session"
+                      errorMessage={isValid4 || !touched4 ? "" : "You need to select a session"}
+                      isInvalid={isValid4 || !touched4 ? false: true}
+                      className="w-full"
+                      selectedKeys={[sessionId]}
+                      onChange={(e) => {setSessionId(e.target.value); console.log(e.target.value)}}
+                      onClose={() => setTouched4(true)}
+                      value={sessionId}
+                    >
+                      {sessions.map((session) => (
+                        <SelectItem key={session.key} textValue={session.label}>
+                          {session.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
                     <Input
                       autoFocus
                       label="Classroom"
@@ -530,7 +572,7 @@ const ManageSessionSchedule = () => {
                     />
                     <DatePicker
                       isRequired
-                      label="User Birth Date"
+                      label="Session Date"
                       className="w-full"
                       variant="bordered"
                       granularity="second"
@@ -564,7 +606,7 @@ const ManageSessionSchedule = () => {
                     try{
                       let newSessionSchedule: SessionSchedule = {
                         ClassId: classId,
-                        SessionId: sessionSchedule.SessionId,
+                        SessionId: sessionId,
                         SessionDate: convertDate(sessionDate),
                         Classroom: sessionSchedule.Classroom,
                         OnlineMeetingUrl: sessionSchedule.OnlineMeetingUrl,
@@ -574,7 +616,7 @@ const ManageSessionSchedule = () => {
                         UpdatedDate: new Date(0).toISOString(),
                         ActiveFlag: true,
                       }
-                      // console.log(newSessionSchedule)
+                      console.log(newSessionSchedule)
                       await createsessionSchedule(newSessionSchedule).then((object: any) => {
                         if(!object.success){
                             alert(object.message)
@@ -599,7 +641,7 @@ const ManageSessionSchedule = () => {
                     try {
                       let updatedSessionSchedule: SessionSchedule = {
                         ClassId: classId,
-                        SessionId: sessionSchedule.SessionId,
+                        SessionId: sessionId,
                         SessionDate: convertDate(sessionDate),
                         Classroom: sessionSchedule.Classroom,
                         OnlineMeetingUrl: sessionSchedule.OnlineMeetingUrl,
