@@ -131,11 +131,38 @@ export type CourseDetail = {
     SessionName: string;
     ContentUrl: string;
     LearningOutcome: string;
-    LectureDate: any;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
     UpdatedDate: any;
+    ActiveFlag: boolean;
+}
+
+export type SessionSchedule = {
+    SessionId: string;
+    ClassId: string;
+    SessionDate: any;
+    Classroom: string;
+    OnlineMeetingUrl: string | null;
+    CreatedDate: any;
+    CreatedBy: string;
+    UpdatedDate: any;
+    UpdatedBy: string | null;
+    ActiveFlag: boolean;
+}
+
+export type SessionScheduleResponse= {
+    SessionId: string;
+    SessionName: string;
+    SessionNumber: number;
+    ClassId: string;
+    SessionDate: any;
+    Classroom: string;
+    OnlineMeetingUrl: string;
+    CreatedDate: any;
+    CreatedBy: string;
+    UpdatedDate: any;
+    UpdatedBy: string | null;
     ActiveFlag: boolean;
 }
 
@@ -186,9 +213,12 @@ export type MsStaff = {
     StaffId: string;
     StaffName: string;
     StaffEmail: string;
+    PhoneNumber: string;
     BirthDate: any;
     Address: string;
-    RoleId: string;    
+    RoleId: string;   
+    Gender: string;
+    ProfilePictureUrl: string | null; 
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
@@ -200,11 +230,14 @@ export type MsStudent = {
     StudentId: string;
     StudentName: string;
     StudentEmail: string;
+    PhoneNumber: string;
     BirthDate: any;
     Address: string;
     AcadYear: string;
     RoleId: string;
-    LearningStyleId: string;
+    Gender: string;
+    ProfilePictureUrl: string | null;
+    LearningStyleId: string | null;
     DepartmentId: string;
     CreatedBy: string;
     CreatedDate: any;

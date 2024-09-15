@@ -12,10 +12,10 @@ const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface BarChartProps {
     title: string;
-    userName: string;
+    userId: string;
 }
 
-const LecturerBarChart : React.FC<BarChartProps> = ({title, userName}) => {
+const LecturerBarChart : React.FC<BarChartProps> = ({title, userId}) => {
     // select 
     const [classesDDL, setClassesDDL] = React.useState<string[]>([]);
     const [classes, setClasses] = React.useState<SelectList[]>([]);
@@ -41,7 +41,7 @@ const LecturerBarChart : React.FC<BarChartProps> = ({title, userName}) => {
 
         console.log(academicPeriodId)
 
-        fetchLecturerClassCourse(userName, academicPeriodId).then((object: any) => {
+        fetchLecturerClassCourse(userId, academicPeriodId).then((object: any) => {
             const classes = object.data.map((z: any) => {
               return {
                 key: z.ClassKey,

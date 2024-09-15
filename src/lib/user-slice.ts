@@ -38,6 +38,7 @@ export const userSlice = createSlice({
               state.name = user.name;
               state.email = user.email;
               state.role = user.role;
+              state.roleCategory = user.roleCategory;
             }
           },
           clearUser: (state) => {
@@ -45,6 +46,7 @@ export const userSlice = createSlice({
             state.name = '';
             state.email = '';
             state.role = '';
+            state.roleCategory = '';
             // Clear from local storage
             localStorage.removeItem('user');
           },

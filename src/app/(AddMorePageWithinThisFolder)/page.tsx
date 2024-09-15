@@ -147,7 +147,7 @@ const Dashboard = () => {
             {userData.role === "Administrator" ? (
               <AdministratorBarChart title='Students Enrolled' />
             ) : userData.role === "Lecturer" ? (
-              <LecturerBarChart title='Average Students Score' userName={userData.name} />
+              <LecturerBarChart title='Average Students Score' userId={userData.id} />
             ) : (
               <StudentBarChart title='Students Score' />
             )}

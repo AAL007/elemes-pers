@@ -38,36 +38,15 @@ export async function createCourseDetail(item: CourseDetail){
 }
 
 export async function updateCourseDetail(item: CourseDetail){
-    const { data, error } = await supabase.from('CourseDetail').update(item).eq('CourseId', item.CourseId).eq('SessionNumber', item.SessionNumber)
+    const { data, error } = await supabase.from('CourseDetail').update(item).eq('SessionId', item.SessionId)
     if(error){
         return {success: false, data: [], message: error.message}
     }
     return {success: true, data: data, message: 'Data updated successfully!'}
 }
 
-export async function updateCourseDetailSessionNumber(courseId: string, sourceSessionId: string, destinationSessionId: string){
-    const datas = await supabase.from('CourseDetail').select('*').eq('CourseId', courseId).in('SessionId', [`${sourceSessionId}`, `${destinationSessionId}`]).limit(2)
-    if(datas.error){
-        console.log(datas.error.message)
-        return {success: false, data: [], message: datas.error.message}
-    }
-    const sourceSessionNumber = datas.data.find(data => data.SessionId === sourceSessionId).SessionNumber;
-    const destinationSessionNumber = datas.data.find(data => data.SessionId === destinationSessionId).SessionNumber;
-    const updateSourceData = await supabase.from('CourseDetail').update({SessionNumber: destinationSessionNumber}).eq('CourseId', courseId).eq('SessionId', sourceSessionId)
-    if(updateSourceData.error){
-        console.log(updateSourceData.error.message)
-        return {success: false, data: [], message: updateSourceData.error.message}
-    }
-    const updateDestinationData = await supabase.from('CourseDetail').update({SessionNumber: sourceSessionNumber}).eq('CourseId', courseId).eq('SessionId', destinationSessionId)
-    if(updateDestinationData.error){
-        console.log(updateDestinationData.error.message)
-        return {success: false, data: [], message: updateDestinationData.error.message}
-    }
-    return {success: true, data: [], message: 'Data updated successfully!'}
-}
-
-export async function deleteCourseDetail(courseId: string, sessionNumber: number){
-    const { data, error } = await supabase.from('CourseDetail').delete().eq('CourseId', courseId).eq('SessionNumber', sessionNumber)
+export async function deleteCourseDetail(sessionId: string){
+    const { data, error } = await supabase.from('CourseDetail').delete().eq('SessionId', sessionId)
     if(error){
         return {success: false, data: [], message: error.message}
     }

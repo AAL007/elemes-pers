@@ -48,7 +48,8 @@ async function getUserData(email: string) {
     StaffId,
     StaffName,
     StaffEmail,
-    RoleId
+    RoleId,
+    ProfilePictureUrl
   `).eq('StaffEmail', email).single()
 
   if (error) {
@@ -56,13 +57,15 @@ async function getUserData(email: string) {
       StudentId,
       StudentName, 
       StudentEmail,
-      RoleId
+      RoleId,
+      ProfilePictureUrl
     `).eq('StudentEmail', email).single()
 
     if (error) {
       return {isError: true, message: error.message, statusCode: 400}
     }
 
+    localStorage.setItem('profilePicture', data?.ProfilePictureUrl as string)
     const roleAndRoleCategory = await getUserRole(data.RoleId)
     if(roleAndRoleCategory.isError){
       return {isError: roleAndRoleCategory.isError, message: roleAndRoleCategory.message, statusCode: roleAndRoleCategory.statusCode}
@@ -80,6 +83,8 @@ async function getUserData(email: string) {
 
     return {isError: false, message: '', statusCode: 200, user}
   }
+
+  localStorage.setItem('profilePicture', data?.ProfilePictureUrl as string)
 
   const roleAndRoleCategory = await getUserRole(data.RoleId)
     if(roleAndRoleCategory.isError){

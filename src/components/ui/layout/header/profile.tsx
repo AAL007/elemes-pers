@@ -1,3 +1,5 @@
+'use client'
+
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -22,6 +24,7 @@ import { color } from "framer-motion";
 const Profile = () => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
+  const [profilePicture, setProfilePicture] = useState("");
   const [anchorEl2, setAnchorEl2] = useState(null);
   const [isLogout, setIsLogout] = useState(false);
   const handleClick2 = (event: any) => {
@@ -35,6 +38,15 @@ const Profile = () => {
     dispatch(loadUserFromStorage());
   }, [dispatch]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedProfilePicture = localStorage.getItem("profilePicture");
+      if (storedProfilePicture) {
+        setProfilePicture(storedProfilePicture);
+      }
+    }
+  }, []);
+
   return (
     <Box component="div">
       <Button
@@ -45,7 +57,7 @@ const Profile = () => {
         onClick={handleClick2}
       >
         <Avatar
-          src=""
+          src={profilePicture}
           alt="image"
           sx={{
             width: 35,
@@ -78,7 +90,7 @@ const Profile = () => {
           <ListItemIcon>
             <IconUser width={20} />
           </ListItemIcon>
-          <ListItemText>My Profile</ListItemText>
+          <ListItemText><Link href={'/edit-profile'}>My Profile</Link></ListItemText>
         </MenuItem>
         {/* <MenuItem>
           <ListItemIcon>
@@ -86,12 +98,12 @@ const Profile = () => {
           </ListItemIcon>
           <ListItemText>My Account</ListItemText>
         </MenuItem> */}
-        <MenuItem>
+        {/* <MenuItem>
           <ListItemIcon>
             <IconListCheck width={20} />
           </ListItemIcon>
           <ListItemText>My Tasks</ListItemText>
-        </MenuItem>
+        </MenuItem> */}
         <Box component="div" mt={1} py={1} px={2}>
           <Button
             href="#"

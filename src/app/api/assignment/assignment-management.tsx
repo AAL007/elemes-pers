@@ -13,8 +13,8 @@ export async function fetchActivePeriod() {
     return {success: true, message: 'Academic Period fetched successfully!', data: data}
 }
 
-export async function fetchLecturerClassCourse(userName: string, academicPeriodId: string) {
-    const { data, error } = await supabase.rpc("fetch_lecturer_class_course", {user_name: userName, academic_period_id: academicPeriodId})
+export async function fetchLecturerClassCourse(userId: string, academicPeriodId: string) {
+    const { data, error } = await supabase.rpc("fetch_lecturer_class_course", {user_id: userId, academic_period_id: academicPeriodId})
     if(error){
         return {success: false, message: error.message, data: []}
     }

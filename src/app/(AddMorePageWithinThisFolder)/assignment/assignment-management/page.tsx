@@ -147,7 +147,7 @@ const AssignmentManagement = () => {
 
   useEffect(() => {
     setIsFetchingAssessment(true);
-    fetchLecturerClassCourse(userData.name, academicPeriod).then((object: any) => {
+    fetchLecturerClassCourse(userData.id, academicPeriod).then((object: any) => {
       const classes = object.data.map((z: any) => {
         return {
           key: z.ClassKey,
@@ -191,7 +191,7 @@ const AssignmentManagement = () => {
           CreatedDate: z.CreatedDate,
           UpdatedBy: z.UpdatedBy,
           UpdatedDate: z.UpdatedDate,
-          ActiveFlag: z.ActiveFlag,
+          ActiveFlag: parseAbsoluteToLocal(z.EffectiveStartDate) <= parseAbsoluteToLocal(today) && parseAbsoluteToLocal(today) <= parseAbsoluteToLocal(z.EffectiveEndDate) ? true : false,
         }
       })
       setAssessments(assessments || []);
@@ -541,6 +541,7 @@ const AssignmentManagement = () => {
                         calendarWidth={700}
                         granularity='second'
                         labelPlacement="inside"
+                        variant="bordered"
                         onChange={setEffectiveStartDate}
                         showMonthAndYearPickers
                         value={effectiveStartDate}
@@ -549,6 +550,7 @@ const AssignmentManagement = () => {
                         label="Effective End Date"
                         granularity='second'
                         labelPlacement="inside"
+                        variant="bordered"
                         calendarWidth={700}
                         onChange={setEffectiveEndDate}
                         showMonthAndYearPickers

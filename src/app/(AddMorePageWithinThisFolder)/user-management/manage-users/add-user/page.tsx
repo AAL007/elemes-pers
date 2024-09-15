@@ -27,15 +27,24 @@ const AddRole = () => {
   const [userAddress, setUserAddress] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
   const [userStudyProgram, setUserStudyProgram] = useState<string>("");
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string>("");
   const [isLoading, setLoadingStatus] = useState<boolean>(false);
   const [touched, setTouched] = React.useState(false);
   const [touched2, setTouched2] = React.useState(false);
   const [touched3, setTouched3] = React.useState(false);
+  const [touched4, setTouched4] = React.useState(false);
   const [courses, setCourse] = useState(new Set([]));
+  const [gender, setGender] = useState<string>("");
+  const [genderDDL, setGenderDDL] = useState<SelectList[]>([
+    { key: "M", label: "Male" },
+    { key: "F", label: "Female" }
+  ]);
 
+  const isGenderValid = gender!== ""
   const isRoleValid = userRole !== ""
   const isCourseValid = courses.size !== 0
   const isStudyProgramValid = userStudyProgram !== ""
+  const isPhoneNumberValid = userPhoneNumber == "" ? false : userPhoneNumber.match(/^[0-9]+$/) ? false : true
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
   const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? false : true
 
@@ -64,9 +73,12 @@ const AddRole = () => {
             StaffId: generateGUID(),
             StaffName: userName,
             StaffEmail: userEmail,
+            PhoneNumber: userPhoneNumber,
             BirthDate: birthDate,
             Address: userAddress,
             RoleId: userRole,
+            Gender: gender,
+            ProfilePictureUrl: null,
             CreatedBy: userData.name,
             CreatedDate: new Date().toISOString(),
             UpdatedBy: null,
@@ -109,11 +121,14 @@ const AddRole = () => {
             StudentId: generateGUID(),
             StudentName: userName,
             StudentEmail: userEmail,
+            PhoneNumber: userPhoneNumber,
             BirthDate: birthDate,
             Address: userAddress,
             AcadYear: new Date().getFullYear().toString(),
             RoleId: userRole,
-            LearningStyleId: "98ef05c8-121a-4821-a54b-9d3ac92f7292",
+            Gender: gender,
+            ProfilePictureUrl: null,
+            LearningStyleId: null,
             DepartmentId: userStudyProgram,
             CreatedBy: userData.name,
             CreatedDate: new Date().toISOString(),
@@ -171,7 +186,7 @@ const AddRole = () => {
   }, [dispatch]);
 
   return (
-    <PageContainer title="Add Role" description="Add Role">
+    <PageContainer title="Add User" description="Add User">
       <Box component="div">
         <div>
           <form className='ml-6' onSubmit={handleSubmit}>
@@ -203,11 +218,26 @@ const AddRole = () => {
                         errorMessage="Please enter a valid email"
                     />
                 </Grid>
+                <Grid item xs={6} sm={6} className="mb-2">
+                    <Input
+                        autoFocus
+                        label="User Phone Number"
+                        className="w-full sm:max-w-[80%]"
+                        labelPlacement='inside'
+                        placeholder="Enter user phone number"
+                        variant="bordered"
+                        onChange={(e) => {setUserPhoneNumber(e.target.value)}}
+                        value={userPhoneNumber}
+                        isInvalid={isPhoneNumberValid}
+                        errorMessage="Please enter a valid phone number"
+                    />
+                </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <DatePicker
                         isRequired
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
+                        variant="bordered"
                         granularity="second"
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
@@ -227,6 +257,27 @@ const AddRole = () => {
                         onChange={(e) => {setUserAddress(e.target.value)}}
                         value={userAddress}
                     />
+                </Grid>
+                <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                    <Select
+                      required
+                      label= "Gender"
+                      variant="bordered"
+                      placeholder="Select user gender"
+                      errorMessage={isGenderValid || !touched4 ? "" : "You need to select a gender"}
+                      isInvalid={isGenderValid || !touched4 ? false: true}
+                      selectedKeys={[gender]}
+                      className="w-full sm:max-w-[80%]"
+                      onChange={(e) => {setGender(e.target.value)}}
+                      onClose={() => setTouched4(true)}
+                      value={gender}
+                    >
+                      {genderDDL.map((gender: SelectList) => (
+                        <SelectItem key={gender.key}>
+                          {gender.label}
+                        </SelectItem>
+                      ))}
+                    </Select>
                 </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Select
