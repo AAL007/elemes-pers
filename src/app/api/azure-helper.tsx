@@ -11,7 +11,9 @@ export async function uploadFileToAzureBlobStorage(containerName: string, file: 
     const fileType = file.type.split('/').pop();
     const newFileName = `${folderName}/${fileName}.${fileType}`;
     const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
-    await blockBlobClient.uploadData(file);
+    await blockBlobClient.uploadData(file, {
+        blobHTTPHeaders: { blobContentType: file.type }
+    });
 
     const blobUrl = blockBlobClient.url;
     return blobUrl;

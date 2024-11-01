@@ -40,7 +40,7 @@ import { SelectList, Score } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
 import { fetchActivePeriod, fetchLecturerClassCourse, fetchAssessment } from "@/app/api/assignment/assignment-management";
 import { fetchStudentsAnswer, createOrUpdateScore, fetchStudentScore } from "@/app/api/score/student-result";
-import { AssessmentAnswer } from "@/app/api/data-model";
+import { AssessmentAnswerResponse } from "@/app/api/data-model";
 import { ScoreIcon } from "@/components/icon/score-icon";
 import { fetchStudent } from "@/app/api/user-management/manage-users";
 
@@ -79,8 +79,8 @@ const StudentResult = () => {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [academicPeriod, setAcademicPeriod] = React.useState<string>("");
   const [score, setScore] = React.useState<number>(0);
-  const [assessmentAnswer, setAssessmentAnswer] = React.useState<AssessmentAnswer | null>(null);
-  const [assessmentAnswers, setAssessmentAnswers] = React.useState<AssessmentAnswer[]>([]);
+  const [assessmentAnswer, setAssessmentAnswer] = React.useState<AssessmentAnswerResponse | null>(null);
+  const [assessmentAnswers, setAssessmentAnswers] = React.useState<AssessmentAnswerResponse[]>([]);
   const [classes, setClasses] = React.useState<SelectList[]>([]);
   const [classId, setClassId] = React.useState<string>("");
   const [courses, setCourses] = React.useState<SelectList[]>([]);
@@ -224,16 +224,16 @@ const StudentResult = () => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof AssessmentAnswer];
-      const second = b[sortDescriptor.column as keyof AssessmentAnswer];
+      const first = a[sortDescriptor.column as keyof AssessmentAnswerResponse];
+      const second = b[sortDescriptor.column as keyof AssessmentAnswerResponse];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((assessmentAnswer: AssessmentAnswer, columnKey: React.Key) => {
-    const cellValue = assessmentAnswer[columnKey as keyof AssessmentAnswer];
+  const renderCell = React.useCallback((assessmentAnswer: AssessmentAnswerResponse, columnKey: React.Key) => {
+    const cellValue = assessmentAnswer[columnKey as keyof AssessmentAnswerResponse];
 
     switch (columnKey) {
       case "StudentId":

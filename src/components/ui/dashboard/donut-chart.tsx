@@ -87,7 +87,7 @@ const DonutChart: React.FC<DonutChartProps> = ({label, data, numberOfData, title
   const seriescolumnchart: any = data;
 
   return (
-    <DashboardCard title={title}>
+    <DashboardCard contentPadding="30px" title={title}>
       <Grid container spacing={3}>
         {/* column */}
         <Grid item xs={7} sm={7}>

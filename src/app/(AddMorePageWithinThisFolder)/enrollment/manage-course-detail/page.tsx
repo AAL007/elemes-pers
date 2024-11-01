@@ -40,7 +40,7 @@ import { EyeIcon } from "@/components/icon/eye-icon";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { CourseDetail, SelectList } from "@/app/api/data-model";
+import { ContentLearningStyle, CourseDetail, SelectList } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
 import { 
   fetchCourseDetail, 
@@ -48,11 +48,14 @@ import {
   createCourseDetail, 
   updateCourseDetail,
   deleteCourseDetail, 
+  fetchLearningStyle,
+  createContentLearningStyle,
+  fetchContentLearningStyle,
+  updateContentLearningStyle
 } from "@/app/api/enrollment/manage-course-detail";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { Tooltip } from "@nextui-org/react"
-import { FileUpload } from "@/components/ui/file-upload";
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { generateGUID, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -85,13 +88,18 @@ const defaultCourseDetail : CourseDetail = {
   SessionId: "",
   SessionNumber: 0,
   SessionName: "",
-  ContentUrl: "",
   LearningOutcome: "",
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
   UpdatedDate: new Date(0).toISOString(),
   ActiveFlag: false,
+}
+
+type courseContent = {
+  LearningStyleId: string,
+  Content: File | null,
+  URL: string,
 }
 
 const ManageCourseDetail = () => {
@@ -121,17 +129,62 @@ const ManageCourseDetail = () => {
   const [existingFile, setExistingFile] = React.useState<File | null>(null);
   const [courseDetails, setCourseDetails] = React.useState<any[]>([]);
   const [courses, setCourses] = React.useState<SelectList[]>([]);
+  const [learningStyles, setLearningStyles] = React.useState<SelectList[]>([]);
   const isValid = courseId !== ""
+  const [contentLearningStyles, setContentLearningStyles] = React.useState<courseContent[]>([]);
+  const [defaultCourseContent, setDefaultCourseContent] = React.useState([]);
 
-    const handleFileUpload = (files: File[]) => {
-      setFiles(files);
+    const handleChangeFile = (e: React.ChangeEvent<HTMLInputElement>, learningStyleId: string) => {
+      if(e.target.files){
+        const file = e.target.files[0];
+        const newContentLearningStyles = contentLearningStyles.map((contentLearningStyle) => {
+          if(contentLearningStyle.LearningStyleId === learningStyleId){
+            return {
+              ...contentLearningStyle,
+              Content: file
+            }
+          }
+          return contentLearningStyle;
+        })
+        setContentLearningStyles(newContentLearningStyles);
+      }
     }
 
-    const fetchFileFromUrl = async (url: string) => {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const fileName = url.split("/").pop();
-      return new File([blob], fileName || "file");
+    const handleFetchContentLearningStyle = async (sessionId: string) => {
+      const object = await fetchContentLearningStyle(sessionId);
+      const contentLearningStyles = await Promise.all(
+        object.data.map(async (z: any) => {
+          const file = await fetchFileFromUrl(z.ContentUrl);
+          return {
+            LearningStyleId: z.LearningStyleId,
+            Content: null,
+            URL: z.ContentUrl
+          };
+        })
+      );
+      // console.log(contentLearningStyles)
+      setContentLearningStyles(contentLearningStyles);
+    }
+
+    const fetchLearningStyles = async() => {
+      await fetchLearningStyle().then((object: any) => {
+        const learningStyles = object.data.map((z: any) => {
+          return {
+            key: z.LearningStyleId,
+            label: z.LearningStyleName
+          }
+        })
+        const courseContent = learningStyles.map((learningStyle: any) => {
+          return {
+            LearningStyleId: learningStyle.key,
+            Content: null,
+            URL: ""
+          }
+        })
+        setContentLearningStyles(courseContent);
+        setDefaultCourseContent(courseContent);
+        setLearningStyles(learningStyles);
+      })
     }
 
     const fetchingCourseDetail = async () => {
@@ -139,14 +192,11 @@ const ManageCourseDetail = () => {
         setIsFetchingCourses(true);
         await fetchCourseDetail(courseId).then((object: any) => {
             let courseDetails = object.data.map((z: any) => {
-              const file = fetchFileFromUrl(z.ContentUrl);
                 return {
                     CourseId: z.CourseId,
                     SessionId: z.SessionId,
                     SessionNumber: z.SessionNumber.toString(),
                     SessionName: z.SessionName,
-                    ContentUrl: z.ContentUrl,
-                    File: file,
                     LearningOutcome: z.LearningOutcome,
                     CreatedBy: z.CreatedBy,
                     CreatedDate: z.CreatedDate,
@@ -172,7 +222,8 @@ const ManageCourseDetail = () => {
         setCourses(courses);
         setCourseId(courses[0].key);
     })
-  }, [dispatch]);
+    fetchLearningStyles();
+  }, []);
 
   useEffect(() => {
     fetchingCourseDetail();
@@ -278,7 +329,7 @@ const ManageCourseDetail = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Course">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setCourseDetail(session); onOpen()}} />
+                <EditIcon onClick={() => {handleFetchContentLearningStyle(session.SessionId); setIsEdit(true); setCourseDetail(session); onOpen()}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Course">
@@ -288,7 +339,7 @@ const ManageCourseDetail = () => {
             </Tooltip>
             <Tooltip content="Preview Assessment">
                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EyeIcon onClick={() => {window.open(session.ContentUrl, '_blank')}}/>
+                  {/* <EyeIcon onClick={() => {window.open(session.ContentUrl, '_blank')}}/> */}
                 </span>
             </Tooltip>
           </div>
@@ -439,6 +490,7 @@ const ManageCourseDetail = () => {
           setIsCreate(false);
           setFiles([]);
           setExistingFile(null);
+          setContentLearningStyles(defaultCourseContent);
           setCourseDetail(defaultCourseDetail);
           setUploadClicked(false);
           onOpenChange()
@@ -480,11 +532,16 @@ const ManageCourseDetail = () => {
                       onChange={(e) => {setCourseDetail({...courseDetail, LearningOutcome: e.target.value})}}
                       value={courseDetail.LearningOutcome}
                     />
-                    <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
-                      <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
-                      <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
-                      <FileUpload existingFile={existingFile} onChange={handleFileUpload} />
-                    </div>
+                    <h2 className="text-lg font-semibold">Course Content</h2>
+                    {contentLearningStyles.map((contentLearningStyle, index) => (
+                      <div className="flex gap-2 mt-1 items-center justify-between w-full" key={index}>
+                        <input onChange={(e) => {handleChangeFile(e, contentLearningStyle.LearningStyleId)}} type="file" className="relative w-full inline-flex shadow-sm border-default-200 hover:border-default-400 border-2 rounded-xl focus:border-black" style={{ padding: '13px' }} autoFocus/>
+                        <Input autoFocus disabled readOnly variant="bordered" label="Learning Style" value={learningStyles.find(x => x.key == contentLearningStyle.LearningStyleId)?.label}/>
+                        {isEdit && (
+                          <EyeIcon className="relative w-1/5 inline-flex" onClick={() => {window.open(contentLearningStyle.URL, '_blank')}}></EyeIcon>
+                        )}
+                      </div>
+                    ))}
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -499,6 +556,7 @@ const ManageCourseDetail = () => {
                   setIsDelete(false);
                   setIsCreate(false);
                   setFiles([]);
+                  setContentLearningStyles(defaultCourseContent);
                   setExistingFile(null);
                   setUploadClicked(false);
                   onClose();
@@ -509,14 +567,21 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
+                      const learningStyleWithNoContent = contentLearningStyles.filter((contentLearningStyle) => contentLearningStyle.Content === null).length;
+                      if(courseDetail.sessionName == "" || courseDetail.SessionNumber == 0 || courseDetail.LearningOutcome == ""){
+                        alert("Please fill in all the fields");
+                        return;
+                      }
+                      if(learningStyleWithNoContent > 0){
+                        alert("Please upload content for all learning style categories");
+                        return;
+                      }
                       let sessionId = await generateGUID();
-                      let blobUrl = await uploadFileToAzureBlobStorage("course-content", files[0], courseLabel, sessionId);
                       let newCourseDetail: CourseDetail = {
                         CourseId: courseId,
                         SessionId: sessionId,
                         SessionNumber: parseInt(courseDetail.SessionNumber),
                         SessionName: courseDetail.SessionName,
-                        ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
@@ -529,14 +594,37 @@ const ManageCourseDetail = () => {
                             alert(object.message)
                             return;
                         }
-                        onClose();
-                        setFiles([]);
-                        setExistingFile(null);
-                        setIsCreate(false);
-                        setUploadClicked(false);
-                        setCourseDetail(defaultCourseDetail);
-                        fetchingCourseDetail();
                       })
+                      for(let i = 0; i < contentLearningStyles.length; i++){
+                        const contentFile = contentLearningStyles[i].Content;
+                        let blobUrl = "";
+                        if(contentFile instanceof File){
+                          blobUrl = await uploadFileToAzureBlobStorage("course-content", contentFile, courseLabel, `${sessionId}/${contentLearningStyles[i].LearningStyleId}`);
+                        }
+                        let newContentLearningStyle: ContentLearningStyle = {
+                          SessionId: sessionId,
+                          LearningStyleId: contentLearningStyles[i].LearningStyleId,
+                          ContentUrl: blobUrl,
+                          CreatedBy: userData.name,
+                          CreatedDate: new Date().toISOString(),
+                          UpdatedBy: null,
+                          UpdatedDate: new Date(0).toISOString(),
+                        }
+                        await createContentLearningStyle(newContentLearningStyle).then((object: any) => {
+                          if(!object.success){
+                            alert(object.message)
+                            return;
+                          }
+                          onClose();
+                          setFiles([]);
+                          setExistingFile(null);
+                          setContentLearningStyles(defaultCourseContent);
+                          setIsCreate(false);
+                          setUploadClicked(false);
+                          setCourseDetail(defaultCourseDetail);
+                          fetchingCourseDetail();
+                        })
+                      }
                     }finally{
                       setIsLoading(false);
                     }
@@ -547,13 +635,36 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
-                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage("course-content", files[0], courseLabel, courseDetail.SessionId) : courseDetail.ContentUrl;
+                      const learningStyleWithContent = contentLearningStyles.filter((contentLearningStyle) => contentLearningStyle.Content != null).length;
+                      if( learningStyleWithContent > 0){
+                        for(let i = 0; i < contentLearningStyles.length; i++){
+                          const contentFile = contentLearningStyles[i].Content;
+                          let blobUrl = "";
+                          if(contentFile instanceof File){
+                            blobUrl = await replaceFileInAzureBlobStorage("course-content", contentFile, courseLabel, `${courseDetail.SessionId}/${contentLearningStyles[i].LearningStyleId}`);
+                          }
+                          let newContentLearningStyle: ContentLearningStyle = {
+                            SessionId: courseDetail.SessionId,
+                            LearningStyleId: contentLearningStyles[i].LearningStyleId,
+                            ContentUrl: blobUrl,
+                            CreatedBy: userData.name,
+                            CreatedDate: new Date().toISOString(),
+                            UpdatedBy: null,
+                            UpdatedDate: new Date(0).toISOString(),
+                          }
+                          await updateContentLearningStyle(newContentLearningStyle).then((object: any) => {
+                            if(!object.success){
+                              alert(object.message)
+                              return;
+                            }
+                          })
+                        }
+                      }
                       let updatedCourseDetail: CourseDetail = {
                         CourseId: courseDetail.CourseId,
                         SessionId: courseDetail.SessionId,
                         SessionNumber: parseInt(courseDetail.SessionNumber),
                         SessionName: courseDetail.SessionName,
-                        ContentUrl: blobUrl,
                         LearningOutcome: courseDetail.LearningOutcome,
                         CreatedBy: courseDetail.CreatedBy,
                         CreatedDate: courseDetail.CreatedDate,
@@ -561,12 +672,12 @@ const ManageCourseDetail = () => {
                         UpdatedDate: new Date().toISOString(),
                         ActiveFlag: courseDetail.ActiveFlag,
                       }
-                      console.log(updatedCourseDetail)
                       await updateCourseDetail(updatedCourseDetail).then((object: any) => {
                         if(object.success) {
                           onClose();
                           setFiles([]);
                           setExistingFile(null);
+                          setContentLearningStyles(defaultCourseContent);
                           setUploadClicked(false);
                           setIsEdit(false);
                           setCourseDetail(defaultCourseDetail);
@@ -585,12 +696,15 @@ const ManageCourseDetail = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let res = await deleteFileInAzureBlobStorageByUrl("course-content", courseLabel, courseDetail.SessionId);
+                      for(let i = 0; i < contentLearningStyles.length; i++){
+                        await deleteFileInAzureBlobStorageByUrl("course-content", courseLabel, `${courseDetail.SessionId}`);
+                      }
                       await deleteCourseDetail(courseDetail.SessionId).then((object: any) => {
                         if(object.success){
                           onClose();
                           setFiles([]);
                           setExistingFile(null);
+                          setContentLearningStyles(defaultCourseContent);
                           setIsDelete(false);
                           setUploadClicked(false);
                           setCourseDetail(defaultCourseDetail);

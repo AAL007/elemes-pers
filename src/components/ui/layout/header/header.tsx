@@ -9,8 +9,9 @@ import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { useEffect } from 'react';
-import { fetchAdministratorNotification, fetchLecturerNotification } from '@/app/api/home/dashboard';
+import { useEffect, useState } from 'react';
+import { fetchAdministratorNotification, fetchLecturerNotification, fetchStudentNotification } from '@/app/api/home/dashboard';
+import { useMediaQuery } from '@mui/material';
 
 interface ItemType {
   toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
@@ -23,6 +24,26 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
   const [messages, setMessages] = React.useState<{Message: string, Entity: string}[]>([]);
+  // const [isCourseListPage, setIsCourseListPage] = React.useState<boolean>(false);
+
+  let display = {
+    lg: 'none',
+    xs: 'inline',
+  }
+
+  // const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
+  
+  // useEffect(() => {
+  //   const isCourseListPage = window.location.pathname.includes("course/course-list");
+  //   setIsCourseListPage(isCourseListPage);
+  // }, [lgUp, isCourseListPage])
+
+  // if(lgUp && isCourseListPage){
+  //   display = {
+  //     lg: 'inline',
+  //     xs: 'inline',
+  //   }
+  // }
 
   useEffect(() => {
     dispatch(loadUserFromStorage())
@@ -54,9 +75,20 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
       
       lecturerNotification();
     }else if(userData.role == "Student"){
-
+      console.log(userData.id)
+      const studentNotification = async () => {
+        const res = await fetchStudentNotification(userData.id);
+        if(!res.success){
+          alert(res.message);
+          return;
+        }
+  
+        setMessages(res.data as {Message: string, Entity: string}[]);
+      }
+      
+      studentNotification();
     }
-  }, [dispatch, userData.role]);
+  }, [userData.id, userData.role]);
 
   const AppBarStyled = styled(AppBar)(({ theme }) => ({
     boxShadow: 'none',
@@ -80,10 +112,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
           aria-label="menu"
           onClick={toggleMobileSidebar}
           sx={{
-            display: {
-              lg: "none",
-              xs: "inline",
-            },
+            display,
           }}
         >
           <IconMenu width="20" height="20" />
@@ -98,7 +127,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
               aria-controls="msgs-menu"
               aria-haspopup="true"
             >
-              <Badge variant="dot" color="primary">
+              <Badge variant={messages.length == 0 ? 'standard' : 'dot'} color="primary">
                 <IconBellRinging size="21" stroke="1.5" />
               </Badge>
             </IconButton>

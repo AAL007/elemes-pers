@@ -9,7 +9,6 @@ import {
   IconBooks,
   IconMicroscope,
   IconClipboard,
-  IconClipboardText,
   IconScoreboard,
   IconCalendarTime
 } from "@tabler/icons-react";
@@ -136,6 +135,30 @@ const Menuitems = [
     href: "/enrollment/manage-students",
     roles: ["administrator"],
   },
+  {
+    navlabel: true,
+    subheader: "Course",
+    roles: ["student"],
+  },
+  {
+    id: uniqueId(),
+    title: "Course List",
+    icon: IconCertificate,
+    href: "/course/course-list",
+    roles: ["student"],
+  },
+  // {
+  //   navlabel: true,
+  //   subheader: "Assignment",
+  //   roles: ["student"],
+  // },
+  // {
+  //   id: uniqueId(),
+  //   title: "Assignment List",
+  //   icon: IconClipboard,
+  //   href: "/assignment/assignment-list",
+  //   roles: ["student"],
+  // },
   // {
   //   navlabel: true,
   //   subheader: "Extra",

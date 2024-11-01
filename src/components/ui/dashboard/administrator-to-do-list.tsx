@@ -36,7 +36,7 @@ const AdministratorToDoList = () => {
     }, [dispatch]);
     return (
 
-        <DashboardCard title="To Do List">
+        <DashboardCard contentPadding='30px' title="To Do List">
             <Box component="div" sx={{ overflow: 'auto', width: { xs: '280px', sm: 'auto' } }}>
                 <Table
                     aria-label="simple table"

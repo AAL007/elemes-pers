@@ -1,7 +1,7 @@
 'use server'
 
 import { createClient } from "../../../../utils/supabase/server"
-import { CourseDetail } from "../data-model"
+import { ContentLearningStyle, CourseDetail } from "../data-model"
 
 const supabase = createClient()
 
@@ -13,8 +13,24 @@ export async function fetchCourse() {
     return {success: true, data: data, message: 'Data fetched successfully!'}
 }
 
+export async function fetchLearningStyle() {
+    const { data, error } = await supabase.from('MsLearningStyle').select('LearningStyleId, LearningStyleName')
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
 export async function fetchCourseDetail(courseId: string){
     const { data, error } = await supabase.from('CourseDetail').select().eq('CourseId', courseId).order('SessionNumber', {ascending: true})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
+export async function fetchContentLearningStyle(sessionId: string){
+    const { data, error } = await supabase.from('ContentLearningStyle').select().eq('SessionId', sessionId)
     if(error){
         return {success: false, data: [], message: error.message}
     }
@@ -37,12 +53,28 @@ export async function createCourseDetail(item: CourseDetail){
     return {success: true, data: data, message: 'Data inserted successfully!'}
 }
 
+export async function createContentLearningStyle(item: ContentLearningStyle){
+    const { data, error } = await supabase.from('ContentLearningStyle').insert(item)
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: [], message: 'Data inserted successfully!'}
+}
+
 export async function updateCourseDetail(item: CourseDetail){
     const { data, error } = await supabase.from('CourseDetail').update(item).eq('SessionId', item.SessionId)
     if(error){
         return {success: false, data: [], message: error.message}
     }
     return {success: true, data: data, message: 'Data updated successfully!'}
+}
+
+export async function updateContentLearningStyle(item: ContentLearningStyle){
+    const { data, error } = await supabase.from('ContentLearningStyle').update(item).eq('SessionId', item.SessionId).eq('LearningStyleId', item.LearningStyleId)
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: [], message: 'Data updated successfully!'}
 }
 
 export async function deleteCourseDetail(sessionId: string){

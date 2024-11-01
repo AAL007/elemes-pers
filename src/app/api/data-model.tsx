@@ -112,9 +112,74 @@ export type MsAcademicPeriod = {
     ActiveFlag: boolean;
 }
 
+export type ForumPost = {
+    ForumId: string;
+    SessionId: string;
+    ContentTitle: string;
+    Content: string;
+    ContentUrl: string;
+    CreatorId: string;
+    CreatorType: string;
+    CreatedDate: any;
+    UpdatedDate: any;
+}
+
+export type ForumPostResponse = ForumPost & {
+    CreatorName: string;
+    CreatorEmail: string;
+    CreatorImage: string;
+    File: File | null;
+    NumOfReplies: number;
+}
+
+export type ForumThread = {
+    ThreadId: string;
+    ForumId: string;
+    Content: string;
+    ContentUrl: string;
+    CreatorId: string;
+    CreatorType: string;
+    CreatedDate: any;
+    UpdatedDate: any;
+}
+
+export type ForumThreadResponse = ForumThread & {
+    CreatorName: string;
+    CreatorEmail: string;
+    CreatorImage: string;
+    File: File | null;
+}
+
+export type StudentAttendanceLog = {
+    StudentId: string;
+    SessionId: string;
+    TimeIn: any;
+    Status: boolean;
+    Remarks: string;
+}
+
+export type StudentSessionLog = {
+    SessionId: string;
+    StudentId: string;
+    IsContentClicked: boolean;
+    IsAssignmentClicked: boolean;
+    CreatedDate: any;
+    UpdatedDate: any | null;
+}
+
+export type StudentActivityLog = {
+    StudentId: string;
+    SessionId: string;
+    LearningStyleId: string;
+    TimeSpent: number;
+    Rating: number;
+    CreatedDate: any;
+}
+
 export type MsCourse = {
     CourseId: string;
     CourseName: string;
+    CourseImage: string;
     NumOfSession: number;
     TotalCredits: number;
     CreatedBy: string;
@@ -129,13 +194,22 @@ export type CourseDetail = {
     SessionId: string;
     SessionNumber: number;
     SessionName: string;
-    ContentUrl: string;
     LearningOutcome: string;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
     UpdatedDate: any;
     ActiveFlag: boolean;
+}
+
+export type ContentLearningStyle = {
+    SessionId: string;
+    LearningStyleId: string;
+    ContentUrl: string;
+    CreatedBy: string;
+    CreatedDate: any;
+    UpdatedBy: string | null;
+    UpdatedDate: any;
 }
 
 export type SessionSchedule = {
@@ -172,8 +246,10 @@ export type MsAssessment = {
     AssessmentUrl: string;
     CourseId: string;
     ClassId: string;
+    Chances: number;
     AcademicPeriodId: string;
     SessionNumber: number;
+    SessionId: string;
     EffectiveStartDate: any;
     EffectiveEndDate: any;
     CreatedBy: string;
@@ -185,13 +261,16 @@ export type MsAssessment = {
 
 export type AssessmentAnswer = {
     StudentId: string;
-    StudentName: string;
     AssessmentId: string; 
     AnswerUrl: string;
-    Score: number;
-    CreatedDate: string;
-    UpdatedDate: string;
+    CreatedDate: any;
+    UpdatedDate: any;
     Chances: number;
+}
+
+export type AssessmentAnswerResponse = AssessmentAnswer & {
+    Score: number;
+    StudentName: string;
 }
 
 export type Score = {

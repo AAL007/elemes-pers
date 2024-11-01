@@ -9,31 +9,25 @@ import {
 } from '@mui/material';
 import DashboardCard from './dashboard-card';
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/lib/store";
-import { loadUserFromStorage } from "@/lib/user-slice";
 import React from 'react';
-import { fetchLecturerToDoList } from '@/app/api/home/dashboard';
+import { fetchLecturerToDoList, fetchStudentToDoList } from '@/app/api/home/dashboard';
 
-const LecturerToDoList = () => {
+const LecturerToDoList = ({userId, userRole} : {userId: string, userRole: string}) => {
     const [toDoList, setToDoList] = React.useState<{Description: string, Deadline: number}[]>([]);
-    const dispatch = useDispatch();
-    const userData = useSelector((state: RootState) => state.user);
     
     useEffect(() => {
-        dispatch(loadUserFromStorage())
         const toDoList = async () => {
-            const res = await fetchLecturerToDoList(userData.id);
+            const res = userRole == 'Lecturer' ? await fetchLecturerToDoList(userId) : await fetchStudentToDoList(userId);
             if (!res.success) {
                 alert(res.message);
             }
             setToDoList(res.data as { Description: string, Deadline: number}[]);
         };
         toDoList();
-    }, [dispatch]);
-    return (
+    }, [userId, userRole]);
 
-        <DashboardCard title="To Do List">
+    return (
+        <DashboardCard contentPadding='30px' title="To Do List">
             <Box component="div" sx={{ overflow: 'auto', width: { xs: '280px', sm: 'auto' } }}>
                 <Table
                     aria-label="simple table"

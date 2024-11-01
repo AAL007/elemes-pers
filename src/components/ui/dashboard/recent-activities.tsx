@@ -22,7 +22,7 @@ interface RecentActivitiesProps {
 
 const RecentActivities : React.FC<RecentActivitiesProps> = ({data}) => {
   return (
-    <DashboardCard title="Recent Activities">
+    <DashboardCard contentPadding='30px' title="Recent Activities">
       <>
         <Timeline
           className="theme-timeline"
@@ -53,7 +53,7 @@ const RecentActivities : React.FC<RecentActivitiesProps> = ({data}) => {
               <TimelineItem>
               <TimelineOppositeContent>{item.time}</TimelineOppositeContent>
               <TimelineSeparator>
-                <TimelineDot color={item.activity == "Created" ? "success" : item.activity == "Updated" ? "primary" : "error"} variant="outlined" />
+                <TimelineDot color={(item.activity.toLowerCase() == "created" || item.activity.toLocaleLowerCase() == "finished" || item.activity.toLowerCase() == "added") ? "success" : item.activity.toLowerCase() == "updated" ? "primary" : "error"} variant="outlined" />
                 {!isLastItem && <TimelineConnector />}
               </TimelineSeparator>
               <TimelineContent className={isLastItem ? 'mb-10' : ''}>{item.message}</TimelineContent>

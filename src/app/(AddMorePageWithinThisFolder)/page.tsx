@@ -9,7 +9,19 @@ import AdministratorToDoList from '@/components/ui/dashboard/administrator-to-do
 import LecturerToDoList from '@/components/ui/dashboard/lecturer-to-do-list';
 // import AreaChart from '@/components/ui/dashboard/area-chart';
 import React, { useEffect, useState } from 'react';
-import { fetchTotalActiveUser, fetchTotalActiveClass, fetchStudentsEnrolled, fetchAdministratorRecentActivities, fetchActiveClassStudents, fetchActiveAssignmentClass, fetchLecturerRecentActivity } from '@/app/api/home/dashboard';
+import { 
+  fetchTotalActiveUser, 
+  fetchTotalActiveClass, 
+  fetchCompletedCourse,
+  fetchAttendanceStatus,
+  fetchStudentsEnrolled, 
+  fetchStudentRecentActivity,
+  fetchAdministratorRecentActivities, 
+  fetchActiveClassStudents, 
+  fetchActiveAssignmentClass, 
+  fetchLecturerRecentActivity,
+  fetchLearningStyle, 
+} from '@/app/api/home/dashboard';
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -17,6 +29,8 @@ import AdministratorBarChart from '@/components/ui/dashboard/administrator-bar-c
 import LecturerBarChart from '@/components/ui/dashboard/lecturer-bar-chart';
 import StudentBarChart from '@/components/ui/dashboard/student-bar-chart';
 import Loading from './loading';
+import LearningStyleQuestionnaire from '@/components/ui/learning-style-questionnaire';
+import { set } from 'lodash';
 
 const Dashboard = () => {
   const [countsActiveUser, setCountsActiveUser] = useState<number[]>([]);
@@ -25,11 +39,31 @@ const Dashboard = () => {
   const [countsActiveClass, setCountsActiveClass] = useState<number[]>([]);
   const [classes, setClasses] = useState<string[]>([]);
   const [totalActiveClasses, setTotalActiveClasses] = useState<number>(0);
-  const [administratorNotification, setAdministratorNotification] = useState<any[]>([]);
+  const [recentActivities, setRecentActivities] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLearningStyleNotExist, setIsLearningStyleNotExist] = useState(false);
+  const [courseId, setCourseId] = useState<string>("");
 
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
+
+  const fetchingAttendanceStatus = async () => {
+    const res = await fetchAttendanceStatus(userData.id, courseId);
+    console.log(res)
+    if (!res.success) {
+      console.log(res)
+      alert(res.message);
+      return;
+    }
+    let classes = ['Present', 'Absent', 'Not Started'];
+    setClasses(classes)
+    console.log(res.data)
+    let countPresent = res.data.filter((x: any) => x.attendanceStatus == 'Present').length;
+    let countAbsent = res.data.filter((x: any) => x.attendanceStatus == 'Absent').length;
+    let countNotStarted = res.data.filter((x: any) => x.attendanceStatus == 'Not Started').length;
+    setCountsActiveClass([countPresent, countAbsent, countNotStarted]);
+    setTotalActiveClasses(res.data.length);
+  }
 
   useEffect(() => {
     const initialize = async () => {
@@ -75,7 +109,7 @@ const Dashboard = () => {
             return;
           }
   
-          setAdministratorNotification(res.data);
+          setRecentActivities(res.data);
         };
   
         await fetchActiveUser();
@@ -119,14 +153,54 @@ const Dashboard = () => {
             return;
           }
   
-          setAdministratorNotification(res.data)
+          setRecentActivities(res.data)
         }
 
         await fetchingActiveClassStudents();
         await fetchingActiveAssignmentClass();
         await fetchingLecturerRecentActivity();
       } else if(userData.role == "Student"){
+        const fetchingStudentLearningStyle = async () => {
+          const res = await fetchLearningStyle(userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
 
+          if(res.data[0].LearningStyleId == null){
+            setIsLearningStyleNotExist(true);
+          }
+        }
+
+        const fetchingCompletedCourse = async () => {
+          const res = await fetchCompletedCourse(userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+          let roles = ['Completed', 'Incomplete', 'Not Started'];
+          setRoles(roles)
+          let countCompleted = res.data.filter((x: any) => x.courseStatus == 'Completed').length;
+          let countIncomplete = res.data.filter((x: any) => x.courseStatus == 'Incomplete').length;
+          let countNotStarted = res.data.filter((x: any) => x.courseStatus == 'Not Started').length;
+          setCountsActiveUser([countCompleted, countIncomplete, countNotStarted]); 
+          setTotalActiveUsers(res.data.length);
+        }
+
+        const fetchingStudentRecentActivity = async () => {
+          const res = await fetchStudentRecentActivity(userData.id);
+          if (!res.success) {
+            alert(res.message);
+            return;
+          }
+
+          setRecentActivities(res.data)
+        }
+
+        await fetchingStudentLearningStyle();
+        await fetchingCompletedCourse();
+        await fetchingAttendanceStatus();
+        await fetchingStudentRecentActivity();
       }
  
       setIsLoading(false);
@@ -135,48 +209,57 @@ const Dashboard = () => {
     initialize();
   }, [dispatch, userData.name]);
 
+  useEffect(() => {
+    if(userData.role == "Student"){
+      fetchingAttendanceStatus();
+    }
+  }, [courseId])
+
   if (isLoading || !userData.role) {
     return <Loading />;
   }
 
   return (
-    <PageContainer title="Dashboard" description="Landing Page">
-      <Box component="div">
-        <Grid container spacing={3}>
-          <Grid item xs={12} lg={8}>
-            {userData.role === "Administrator" ? (
-              <AdministratorBarChart title='Students Enrolled' />
-            ) : userData.role === "Lecturer" ? (
-              <LecturerBarChart title='Average Students Score' userId={userData.id} />
-            ) : (
-              <StudentBarChart title='Students Score' />
-            )}
-          </Grid>
-          <Grid item xs={12} lg={4}>
-            <Grid container spacing={3}>
-              <Grid item xs={12}>
-                <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Student" : ""} />
-              </Grid>
-              <Grid item xs={12}>
-                <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignment" : ""} />
+    <>
+      <LearningStyleQuestionnaire isLearningStyleNotExist={isLearningStyleNotExist}/>
+      <PageContainer title="Dashboard" description="Landing Page">
+        <Box component="div" className={isLearningStyleNotExist ? 'overflow-hidden' : ''}>
+          <Grid container spacing={3}>
+            <Grid item xs={12} lg={8}>
+              {userData.role === "Administrator" ? (
+                <AdministratorBarChart title='Students Enrolled' />
+              ) : userData.role === "Lecturer" ? (
+                <LecturerBarChart title='Average Students Score' userId={userData.id} />
+              ) : (
+                <StudentBarChart title={`Student's Score`} userId={userData.id} setCourseId={setCourseId} />
+              )}
+            </Grid>
+            <Grid item xs={12} lg={4}>
+              <Grid container spacing={3}>
+                <Grid item xs={12}>
+                  <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Students" : "Completed Courses"} />
+                </Grid>
+                <Grid item xs={12}>
+                  <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignments" : "Total Attendance Logs"} />
+                </Grid>
               </Grid>
             </Grid>
+            <Grid item xs={12} lg={4}>
+              <RecentActivities data={recentActivities} />
+            </Grid>
+            <Grid item xs={12} lg={8}>
+              {userData.role === "Administrator" ? (
+                <AdministratorToDoList />
+              ) : userData.role === "Lecturer" ? (
+                <LecturerToDoList userId={userData.id} userRole={userData.role}/>
+              ) : (
+                <LecturerToDoList userId={userData.id} userRole={userData.role}/>
+              )}
+            </Grid>
           </Grid>
-          <Grid item xs={12} lg={4}>
-            <RecentActivities data={administratorNotification} />
-          </Grid>
-          <Grid item xs={12} lg={8}>
-            {userData.role === "Administrator" ? (
-              <AdministratorToDoList />
-            ) : userData.role === "Lecturer" ? (
-              <LecturerToDoList />
-            ) : (
-              <></>
-            )}
-          </Grid>
-        </Grid>
-      </Box>
-    </PageContainer>
+        </Box>
+      </PageContainer>
+    </>
   );
 };
 

@@ -365,12 +365,12 @@ const ManageSessionSchedule = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Course">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setSessionDate(parseAbsoluteToLocal(session.SessionDate)); setSessionSchedule(session); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setSessionId(session.SessionId); setSessionDate(parseAbsoluteToLocal(session.SessionDate)); setSessionSchedule(session); onOpen()}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Course">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon onClick={() => {setIsDelete(true); setSessionDate(parseAbsoluteToLocal(session.SessionDate)) ;setSessionSchedule(session); onOpen()}}/>
+                <DeleteIcon onClick={() => {setIsDelete(true); setSessionId(session.SessionId); setSessionDate(parseAbsoluteToLocal(session.SessionDate)) ;setSessionSchedule(session); onOpen()}}/>
               </span>
             </Tooltip>
           </div>
@@ -519,6 +519,8 @@ const ManageSessionSchedule = () => {
           setIsEdit(false);
           setIsDelete(false);
           setIsCreate(false);
+          setTouched4(false);
+          setSessionId("");
           setSessionDate(parseAbsoluteToLocal(today));
           setSessionSchedule(defaultSessionSchedule);
           setUploadClicked(false);
@@ -590,8 +592,10 @@ const ManageSessionSchedule = () => {
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
+                  setSessionId("");
                   setSessionDate(parseAbsoluteToLocal(today));
                   setSessionSchedule(defaultSessionSchedule);
+                  setTouched4(false);
                   setIsEdit(false);
                   setIsDelete(false);
                   setIsCreate(false);
@@ -616,7 +620,7 @@ const ManageSessionSchedule = () => {
                         UpdatedDate: new Date(0).toISOString(),
                         ActiveFlag: true,
                       }
-                      console.log(newSessionSchedule)
+                      // console.log(newSessionSchedule)
                       await createsessionSchedule(newSessionSchedule).then((object: any) => {
                         if(!object.success){
                             alert(object.message)
@@ -625,6 +629,8 @@ const ManageSessionSchedule = () => {
                         onClose();
                         setIsCreate(false);
                         setUploadClicked(false);
+                        setTouched4(false);
+                        setSessionId("");
                         setSessionDate(parseAbsoluteToLocal(today));
                         setSessionSchedule(defaultSessionSchedule);
                         fetchingSessionSchedules();
@@ -657,6 +663,8 @@ const ManageSessionSchedule = () => {
                           onClose();
                           setUploadClicked(false);
                           setIsEdit(false);
+                          setTouched4(false);
+                          setSessionId("");
                           setSessionDate(parseAbsoluteToLocal(today));
                           setSessionSchedule(defaultSessionSchedule);
                           fetchingSessionSchedules();
@@ -679,6 +687,8 @@ const ManageSessionSchedule = () => {
                           onClose();
                           setIsDelete(false);
                           setUploadClicked(false);
+                          setTouched4(false);
+                          setSessionId("");
                           setSessionDate(parseAbsoluteToLocal(today));
                           setSessionSchedule(defaultSessionSchedule);
                           fetchingSessionSchedules();
