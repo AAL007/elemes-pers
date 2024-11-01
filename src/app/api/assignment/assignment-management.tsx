@@ -38,6 +38,8 @@ export async function fetchTotalSession(courseId: string){
 }
 
 export async function createAssessment(item: MsAssessment){
+    const res = await supabase.from('CourseDetail').select().eq('CourseId', item.CourseId).eq('SessionNumber', item.SessionNumber).limit(1).single()
+    item.SessionId = res.data.SessionId
     const { data, error } = await supabase.from('MsAssessment').insert(item)
     if(error){
         return {success: false, message: error.message, data: []}
@@ -46,6 +48,8 @@ export async function createAssessment(item: MsAssessment){
 }
 
 export async function updateAssessment(item: MsAssessment){
+    const res = await supabase.from('CourseDetail').select().eq('CourseId', item.CourseId).eq('SessionNumber', item.SessionNumber).limit(1).single()
+    item.SessionId = res.data.SessionId
     const { data, error } = await supabase.from('MsAssessment').update(item).eq('AssessmentId', item.AssessmentId)
     if(error){
         return {success: false, message: error.message, data: []}

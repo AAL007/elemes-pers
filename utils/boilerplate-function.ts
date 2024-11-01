@@ -14,3 +14,25 @@ export const generatePassword = (birthDate: string) => {
 
   return `el3mes${day}/${month}/${year}`;
 }
+
+export const formatDateTime = (dateString: string) => {
+  const date = new Date(dateString);
+  date.setHours(date.getHours());
+  const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+  };
+
+  return date.toLocaleDateString('en-US', options);
+};
+
+export const fetchFileFromUrl = async (url: string) => {
+  const response = await fetch(url);
+  const blob = await response.blob();
+  const fileName = url.split("/").pop();
+  return new File([blob], fileName || "file");
+}    

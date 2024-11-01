@@ -89,8 +89,77 @@ export async function fetchTotalActiveUser() {
 
 // Student
 
-export async function fetchStudentNotification() {
+export async function fetchLearningStyle(studentId: string){
+    const {data, error} = await supabase.from("MsStudent").select("LearningStyleId").eq("StudentId", studentId)
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
 
+export async function fetchStudentCourses(studentId: string){
+    const { data, error } = await supabase.rpc('fetch_courses_by_student_id', {student_id: studentId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
+
+export async function fetchStudentScoreByCourse(studentId: string, courseId: string){
+    const { data, error } = await supabase.rpc('fetch_student_score_by_course', {student_id: studentId, course_id: courseId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
+
+export async function fetchCompletedCourse(studentId: string){
+    const { data, error } = await supabase.rpc('fetch_completed_course', {student_id: studentId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
+
+export async function fetchAttendanceStatus(studentId: string, courseId: string){
+    const { data, error } = await supabase.rpc('fetch_attendance_status', {student_id: studentId, course_id: courseId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data fetched successfully!', data: data}
+}
+
+export async function fetchStudentRecentActivity(userId: string) {
+    const res = await supabase.rpc('fetch_student_recent_activity', {user_id: userId}).limit(100)
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+
+    let data = res.data.map((z: any) => {
+        return {
+            activity: z.Operation,
+            message: `${z.Entity} ${z.Object} has been ${z.Operation}`,
+            time: z.Time
+        }
+    })
+
+    return {success: true, message: 'Notifications fetched successfully!', data: data}
+}
+
+export async function fetchStudentToDoList(userId: string){
+    let res = await supabase.rpc('fetch_student_to_do_list', {user_id: userId})
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+    return {success: true, message: 'Notifications fetched successfully!', data: res.data}
+}
+
+export async function fetchStudentNotification(userId: string) {
+    const { data, error } = await supabase.rpc('fetch_student_notification', {user_id: userId})
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Notifications fetched successfully!', data: data}
 }
 
 // Lecturer

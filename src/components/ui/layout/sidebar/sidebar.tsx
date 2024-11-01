@@ -1,6 +1,8 @@
 import { useMediaQuery, Box, Drawer } from "@mui/material";
 import Logo from "../shared/logo/logo";
 import SidebarItems from "./sidebar-items";
+import { useEffect, useState } from "react";
+import { set } from "lodash";
 // import { Upgrade } from "./Upgrade";
 
 interface ItemType {
@@ -14,11 +16,18 @@ const Sidebar = ({
   onSidebarClose,
   isSidebarOpen,
 }: ItemType) => {
+
+  // const [isCourseListPage, setIsCourseListPage] = useState(false);
   const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
 
+  // useEffect(() => {
+  //   const isCourseListPage = window.location.pathname.includes("course/course-list");
+  //   setIsCourseListPage(isCourseListPage);
+  // }, [lgUp, isCourseListPage]);
+  
   const sidebarWidth = "270px";
 
-  if (lgUp) {
+  if (lgUp) {//&& !isCourseListPage) {
     return (
       <Box
         component="div"

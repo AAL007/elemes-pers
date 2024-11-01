@@ -358,7 +358,7 @@ const EditProfile = () => {
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
                         autoFocus
-                        label="User Email"
+                        label="User Email" 
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
                         placeholder="Enter user email"

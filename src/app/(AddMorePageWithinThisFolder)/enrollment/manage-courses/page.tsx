@@ -43,8 +43,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { MsCourse } from "@/app/api/data-model";
-import { set, update } from "lodash";
-import { error } from "console";
+import { uploadFileToAzureBlobStorage } from "@/app/api/azure-helper";
+import { FileUpload } from "@/components/ui/file-upload";
+import { set } from "lodash";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -67,6 +68,7 @@ const statusOptions = [
 ];
 
 const defaultCourse : MsCourse = {
+  CourseImage: "",
   CourseId: "",
   CourseName: "",
   NumOfSession: 0,
@@ -97,6 +99,7 @@ const ManageCourses = () => {
     direction: "ascending",
   });
   const [isFetchingCourses, setIsFetchingCourses] = React.useState(true);
+  const [imageErrorMessage, setImageErrorMessage] = React.useState("");
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [isEdit, setIsEdit] = React.useState(false);
   const [isDelete, setIsDelete] = React.useState(false);
@@ -107,6 +110,9 @@ const ManageCourses = () => {
   const [nameErrorMessage, setNameErrorMessage] = React.useState("");
   const [sessionErrorMessage, setSessionErrorMessage] = React.useState("");
   const [totalCreditsErrorMessage, setTotalCreditsErrorMessage] = React.useState("");
+  const [files, setFiles] = React.useState<File[]>([]);
+  const [existingFile, setExistingFile] = React.useState<File | null>(null);
+  const [uploadClicked, setUploadClicked] = React.useState(false);
 //   const [value, setValue] = React.useState("");
 //   const [touched, setTouched] = React.useState(false);
 //   const [roleCategories, setRoleCategories] = React.useState<SelectList[]>([])
@@ -122,6 +128,10 @@ const ManageCourses = () => {
     });
     setIsFetchingCourses(false);
   }, [dispatch]);
+
+  const handleFileUpload = (files: File[]) => {
+    setFiles(files);
+  }
 
   const [page, setPage] = React.useState(1);
 
@@ -219,7 +229,7 @@ const ManageCourses = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Course">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setCourseId(course.CourseId); setCourse(course); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setCourseId(course.CourseId); setCourse(course); onOpen(); console.log(course.CourseImage)}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Course">
@@ -377,6 +387,10 @@ const ManageCourses = () => {
           setNameErrorMessage("");
           setSessionErrorMessage("");
           setTotalCreditsErrorMessage("");
+          setImageErrorMessage("");
+          setFiles([]);
+          setExistingFile(null);
+          setUploadClicked(false);
           onOpenChange()
         }}
         placement="top-center"
@@ -393,6 +407,7 @@ const ManageCourses = () => {
                       label="Course Name"
                       placeholder="Enter course name"
                       variant="bordered"
+                      onClick={() => setUploadClicked(false)}
                       onChange={(e) => {setCourse({...course, CourseName: e.target.value})}}
                       value={course.CourseName}
                     />
@@ -404,6 +419,7 @@ const ManageCourses = () => {
                       label="Number of Sessions"
                       placeholder="Enter number of sessions"
                       variant="bordered"
+                      onClick={() => setUploadClicked(false)}
                       onChange={(e) => {setCourse({...course, NumOfSession: e.target.value})}}
                       value={course.NumOfSession}
                     />
@@ -415,11 +431,20 @@ const ManageCourses = () => {
                       label="Number of Credits"
                       placeholder="Enter number of credits"
                       variant="bordered"
+                      onClick={() => setUploadClicked(false)}
                       onChange={(e) => {setCourse({...course, TotalCredits: e.target.value})}}
                       value={course.TotalCredits}
                     />
                     <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
                       {totalCreditsErrorMessage}
+                    </h5>
+                    <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
+                      <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Image</p>
+                      <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
+                      <FileUpload existingFile={existingFile} onChange={handleFileUpload} imageUrl={course.CourseImage}/>
+                    </div>
+                    <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
+                      {imageErrorMessage}
                     </h5>
                   </>
                 ) : (
@@ -437,6 +462,10 @@ const ManageCourses = () => {
                   setNameErrorMessage("");
                   setTotalCreditsErrorMessage("");
                   setSessionErrorMessage("");
+                  setFiles([]);
+                  setExistingFile(null);
+                  setImageErrorMessage("");
+                  setUploadClicked(false);
                   onClose();
                 }}>
                   Close
@@ -445,8 +474,15 @@ const ManageCourses = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
+                      if(files.length == 0){
+                        setImageErrorMessage("Please upload course image!");
+                        return
+                      }
+                      let courseId = await generateGUID();
+                      let blobUrl = await uploadFileToAzureBlobStorage("course-image", files[0], course.CourseName, courseId)
                       let newCourse = {
-                        CourseId: generateGUID(),
+                        CourseImage: blobUrl,
+                        CourseId: courseId,
                         CourseName: course.CourseName,
                         NumOfSession: course.NumOfSession,
                         TotalCredits: course.TotalCredits,
@@ -464,6 +500,10 @@ const ManageCourses = () => {
                           fetchCourses().then((object: any) => {
                             setCourses(object.data || []);
                           })
+                          setExistingFile(null);
+                          setFiles([]);
+                          setUploadClicked(false);
+                          setImageErrorMessage("");
                           setNameErrorMessage("");
                           setTotalCreditsErrorMessage("");
                           setSessionErrorMessage("");
@@ -487,7 +527,12 @@ const ManageCourses = () => {
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
+                      let blobUrl = course.CourseImage
+                      if(files[0] != null){
+                        blobUrl = await uploadFileToAzureBlobStorage("course-image", files[0], course.CourseName, course.CourseId)
+                      }
                       let updatedCourse = {
+                        CourseImage: blobUrl,
                         CourseId: course.CourseId,
                         CourseName: course.CourseName,
                         TotalCredits: course.TotalCredits,
@@ -509,6 +554,10 @@ const ManageCourses = () => {
                           setNameErrorMessage("");
                           setSessionErrorMessage("");
                           setTotalCreditsErrorMessage("");
+                          setFiles([]);
+                          setUploadClicked(false);
+                          setExistingFile(null);
+                          setImageErrorMessage("");
                         }else{
                           if(object.type == 'name'){
                             setNameErrorMessage(object.message)

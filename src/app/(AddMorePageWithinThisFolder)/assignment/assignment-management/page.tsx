@@ -36,23 +36,19 @@ import {
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
-import { DownloadIcon } from "@/components/icon/download-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
 import { fetchActivePeriod, fetchLecturerClassCourse, updateAssessment, createAssessment, deleteAssessment, fetchAssessment, fetchTotalSession } from "@/app/api/assignment/assignment-management";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { generateGUID, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { MsAssessment, SelectList } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
 import { FileUpload } from "@/components/ui/file-upload";
-import { IconDownload } from "@tabler/icons-react";
 import { EyeIcon } from "@/components/icon/eye-icon";
-import { DateValue, now, parseAbsoluteToLocal } from "@internationalized/date";
-import { parse } from "path";
-import { set } from "lodash";
+import { parseAbsoluteToLocal } from "@internationalized/date";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
@@ -78,8 +74,10 @@ const defaultAssessment : MsAssessment = {
   AssessmentUrl: "",
   CourseId: "",
   ClassId: "",
+  Chances: 1,
   AcademicPeriodId: "",
   SessionNumber: 0,
+  SessionId: "",
   EffectiveStartDate: parseAbsoluteToLocal(new Date().toISOString()),
   EffectiveEndDate: parseAbsoluteToLocal(new Date().toISOString()),
   CreatedBy: "",
@@ -183,6 +181,7 @@ const AssignmentManagement = () => {
           File: file,
           CourseId: z.CourseId,
           ClassId: z.ClassId,
+          Chances: z.Chances,
           AcademicPeriodId: z.AcademicPeriodId,
           SessionNumber: z.SessionNumber,
           EffectiveStartDate: z.EffectiveStartDate,
@@ -237,13 +236,6 @@ const AssignmentManagement = () => {
 
   const handleFileUpload = (files: File[]) => {
     setFiles(files);
-  }
-
-  const fetchFileFromUrl = async (url: string) => {
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const fileName = url.split("/").pop();
-    return new File([blob], fileName || "file");
   }
 
   const [page, setPage] = React.useState(1);
@@ -326,12 +318,12 @@ const AssignmentManagement = () => {
       case "Actions":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip content="Edit Class">
+            <Tooltip content="Edit Assignment">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
                 <EditIcon onClick={() => {setIsEdit(true); setEffectiveStartDate(parseAbsoluteToLocal(assessmentObj.EffectiveStartDate)); setEffectiveEndDate(parseAbsoluteToLocal(assessmentObj.EffectiveEndDate)); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}} />
               </span>
             </Tooltip>
-            <Tooltip color="danger" content="Delete Class">
+            <Tooltip color="danger" content="Delete Assigment">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
                 <DeleteIcon onClick={() => {setIsDelete(true); setEffectiveStartDate(parseAbsoluteToLocal(assessmentObj.EffectiveStartDate)); setEffectiveEndDate(parseAbsoluteToLocal(assessmentObj.EffectiveEndDate)); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}}/>
               </span>
@@ -507,7 +499,7 @@ const AssignmentManagement = () => {
                     <Input
                       autoFocus
                       label="Assessment Name"
-                      placeholder="Enter class name"
+                      placeholder="Enter assignment name"
                       variant="bordered"
                       onClick={async() => await setUploadClicked(false)}
                       onChange={(e) => {setAssessment({...assessment, AssessmentName: e.target.value})}}
@@ -516,6 +508,18 @@ const AssignmentManagement = () => {
                     <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
                       {errorMessage}
                     </h5>
+                    <Input
+                      autoFocus
+                      type="number"
+                      label="Submission Chances"
+                      min={1}
+                      max={10}
+                      placeholder="Enter the number of submission chances"
+                      variant="bordered"
+                      onClick={async() => await setUploadClicked(false)}
+                      onChange={(e) => {setAssessment({...assessment, Chances: e.target.value})}}
+                      value={assessment.Chances}
+                    />
                     <Select
                       required
                       label= "Session Number"
@@ -597,8 +601,10 @@ const AssignmentManagement = () => {
                         AssessmentUrl: blobUrl,
                         ClassId: classId,
                         CourseId: courseId,
+                        Chances: parseInt(assessment.Chances),
                         AcademicPeriodId: academicPeriod,
                         SessionNumber: parseInt(sessionNumber),
+                        SessionId: '',
                         EffectiveStartDate: convertedEffectiveStartDate,
                         EffectiveEndDate: convertedEffectiveEndDate,
                         CreatedBy: userData.name,
@@ -607,6 +613,7 @@ const AssignmentManagement = () => {
                         UpdatedDate: new Date(0).toISOString(),
                         ActiveFlag: true,
                       }
+                      console.log(newAssessment)
                       await createAssessment(newAssessment).then((object: any) => {
                         if(!object.success){
                           alert(object.message)
@@ -642,8 +649,10 @@ const AssignmentManagement = () => {
                         AssessmentUrl: blobUrl,
                         ClassId: assessment.ClassId,
                         CourseId: assessment.CourseId,
+                        Chances: parseInt(assessment.Chances),
                         AcademicPeriodId: assessment.AcademicPeriodId,
                         SessionNumber: parseInt(sessionNumber),
+                        SessionId: assessment.SessionId,
                         EffectiveStartDate: convertedEffectiveStartDate,
                         EffectiveEndDate: convertedEffectiveEndDate,
                         CreatedBy: assessment.CreatedBy,

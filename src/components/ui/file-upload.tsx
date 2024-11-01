@@ -27,16 +27,18 @@ const secondaryVariant = {
 
 export const FileUpload = ({
   onChange,
-  existingFile = null
+  existingFile = null,
+  imageUrl = "",
 }: {
   onChange?: (files: File[]) => void;
   existingFile?: File | null;
+  imageUrl?: string;
 }) => {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log(existingFile)
+    // console.log(existingFile)
     setFile(existingFile || null);
   }, [existingFile]);
 
@@ -153,6 +155,7 @@ export const FileUpload = ({
                     "relative group-hover/file:shadow-2xl z-40 bg-white dark:bg-neutral-900 flex items-center justify-center h-32 mt-4 w-full max-w-[8rem] mx-auto rounded-md",
                     "shadow-[0px_10px_50px_rgba(0,0,0,0.1)]"
                   )}
+                  style={{ backgroundImage: `url(${imageUrl})`, backgroundPosition: "center", backgroundSize: "cover", backgroundRepeat: "no-repeat"}}
                 >
                   {isDragActive ? (
                     <motion.p

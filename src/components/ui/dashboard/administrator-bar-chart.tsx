@@ -179,7 +179,7 @@ const AdministratorBarChart : React.FC<BarChartProps> = ({title}) => {
 
     return (
 
-        <DashboardCard title={title} action={
+        <DashboardCard contentPadding='30px' title={title} action={
             <Select
                 labelId="month-dd"
                 id="month-dd"

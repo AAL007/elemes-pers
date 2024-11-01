@@ -250,7 +250,7 @@ const ManageStudents = () => {
       case "Actions":
         return (
           <div className="relative flex items-center gap-2">
-            <Tooltip color="danger" content="Delete Class">
+            <Tooltip color="danger" content="Delete Student">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
                 <DeleteIcon onClick={() => {setIsDelete(true); setStudentId(enrollment.StudentId); onOpen()}}/>
               </span>

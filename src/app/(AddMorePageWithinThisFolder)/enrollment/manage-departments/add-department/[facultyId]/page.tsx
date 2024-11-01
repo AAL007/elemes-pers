@@ -158,7 +158,7 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
         })
         setCourseDropdownList(res)
     })
-  }, [dispatch]);
+  }, []);
 
   const [page, setPage] = React.useState(1);
 

@@ -200,7 +200,7 @@ const LecturerBarChart : React.FC<BarChartProps> = ({title, userId}) => {
 
     return (
 
-        <DashboardCard title={title} action={
+        <DashboardCard contentPadding='30px' title={title} action={
             <>
                 <Select
                     labelId="classes"

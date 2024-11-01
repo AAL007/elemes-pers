@@ -4,79 +4,74 @@ import { useTheme } from '@mui/material/styles';
 import DashboardCard from './dashboard-card';
 import dynamic from "next/dynamic";
 import { fetchStudentsEnrolled } from '@/app/api/home/dashboard';
-import { dropdown } from '@nextui-org/react';
+import { fetchStudentCourses, fetchStudentScoreByCourse } from '@/app/api/home/dashboard';
+import { SelectList } from '@/app/api/data-model';
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface BarChartProps {
     title: string;
+    userId: string;
+    setCourseId: (courseId: string) => void;
 }
 
-const StudentBarChart : React.FC<BarChartProps> = ({title}) => {
-    // select
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonth = currentDate.getMonth();
-    const monthNames = [
-        "January", "February", "March", "April", "May", "June", "July",
-        "August", "September", "October", "November", "December"
-    ];
-    const generateMonthDDL = () => {
-        const distinctMonths: string[] = [];
-  
-        for (let year = currentYear - 2; year <= currentYear; year++) {
-          for (let month = 0; month < 12; month++) {
-            const monthName = `${monthNames[month]} ${year}`;
-            distinctMonths.push(monthName);
-          }
-        }
+const StudentBarChart : React.FC<BarChartProps> = ({title, userId, setCourseId}) => {
+    const [courses, setCourses] = React.useState<SelectList[]>([]);
+    const [courseDDL, setCourseDDL] = React.useState<string[]>([]);
+    const [courseValue, setCourseValue] = React.useState<string>("");
+    const [categories, setCategories] = React.useState<string[]>([]);
+    const [isDataBeingFetched, setIsDataBeingFetched] = React.useState<boolean>(false);
+    const [scores, setScores] = React.useState<number[]>([]);
 
-        let currentMonthName = `${monthNames[currentMonth]} ${currentYear}`;
-        // console.log(currentMonthName)
-        setMonth(currentMonthName);
-        setMonthDDL(distinctMonths);
-    }
-
-    const fetchData = async () => {
-        setIsDataBeingFetched(true);
-        let month_input = monthNames.findIndex(x => x == month.split(" ")[0]) + 1
-        let year_input = parseInt(month.split(" ")[1])
-
-        const res = await fetchStudentsEnrolled(month_input, year_input);
+    const fetchingStudentCourses = async () => {
+        const res = await fetchStudentCourses(userId)
         if (!res.success) {
-            // console.log(res.message);
             alert(res.message);
             return;
         }
-        // console.log(res.data)
-        let totalEnrolledStudents = res.data.map((z: any) => {
-            return z.StudentCount
+        const courses = res.data.map((z: any) => {
+            return {
+                key: z.courseId,
+                label: z.courseName,
+            }
         })
-        let dateCategories = res.data.map((z: any) => {
-            return z.EnrolledDate
-        })
-        setTotalEnrolledstudents(totalEnrolledStudents);
-        setDateCategories(dateCategories);
-        setIsDataBeingFetched(false);
+        setCourses(courses);
+        setCourseDDL(courses.map((z: any) => z.label));
+        setCourseValue(courses[0].label);
+        setCourseId(courses[0].key);
     }
 
-    const [dropdownList, setMonthDDL] = React.useState<string[]>([]);
-    const [month, setMonth] = React.useState(`${monthNames[currentMonth]} ${currentYear}`);
-    const [totalEnrolledStudents, setTotalEnrolledstudents] = React.useState<number[]>([]);
-    const [dateCategories, setDateCategories] = React.useState<string[]>([]);
-    const [isDataBeingFetched, setIsDataBeingFetched] = React.useState<boolean>(false);
+    const handleCourseChange = (e: any) => {
+        const courseId = courses.find((x: any) => x.label == e.target.value)?.key;
+        setCourseId(courseId ?? "");
+        setCourseValue(e.target.value);
+    }
+
+    const fetchingStudentScoreByCourse = async () => {
+        const courseId = courses.find((x: any) => x.label == courseValue)?.key;
+        const res = await fetchStudentScoreByCourse(userId, courseId ?? "")
+        if (!res.success) {
+            alert(res.message);
+            return;
+        }
+        const sessionNumber = res.data.map((z: any) => `Session ${z.sessionNumber}`);
+        const score = res.data.map((z: any) => z.score);
+        setCategories(sessionNumber);
+        setScores(score);
+    }
 
     useEffect(() => {
-        generateMonthDDL();
-        fetchData();
+        setIsDataBeingFetched(true);
+        fetchingStudentCourses();
+        setIsDataBeingFetched(false);
     }, []);
 
     useEffect(() => {
-        fetchData();
-    }, [month])
-
-    const handleChange = (event: any) => {
-        setMonth(event.target.value);
-    };
+        if(courseValue == "") return;
+        setIsDataBeingFetched(true);
+        fetchingStudentCourses();
+        fetchingStudentScoreByCourse();
+        setIsDataBeingFetched(false);
+    }, [courseValue])
 
     // chart color
     const theme = useTheme();
@@ -154,9 +149,11 @@ const StudentBarChart : React.FC<BarChartProps> = ({title}) => {
         },
         yaxis: {
             tickAmount: 4,
+            min: 0, 
+            max: 100
         },
         xaxis: {
-            categories: dateCategories,
+            categories: categories,
             axisBorder: {
                 show: false,
             },
@@ -169,7 +166,7 @@ const StudentBarChart : React.FC<BarChartProps> = ({title}) => {
     const seriescolumnchart: any = [
         {
             name: title,
-            data: totalEnrolledStudents,
+            data: scores,
         },
         // {
         //     name: 'Expense this month',
@@ -179,25 +176,25 @@ const StudentBarChart : React.FC<BarChartProps> = ({title}) => {
 
     return (
 
-        <DashboardCard title={title} action={
+        <DashboardCard contentPadding='30px' title={title} action={
             <Select
-                labelId="month-dd"
-                id="month-dd"
-                value={month}
+                labelId="courses"
+                id="courses"
+                value={courseValue}
                 size="small"
-                onChange={handleChange}
+                onChange={(e) => handleCourseChange(e)}
             >
-                {dropdownList.map((x: string) => {
+                {courseDDL.map((x: string) => {
                     return <MenuItem value={x}>{x}</MenuItem>
                 })}
             </Select>
         }>
             <Chart
-                loading={totalEnrolledStudents.length == 0}
+                loading={scores.length == 0}
                 options={optionscolumnchart}
                 series={seriescolumnchart}
                 type="bar"
-                height={370} width={"100%"}
+                height={415} width={"100%"}
             />
         </DashboardCard>
     );
