@@ -672,6 +672,7 @@ const ManageCourseDetail = () => {
                         UpdatedDate: new Date().toISOString(),
                         ActiveFlag: courseDetail.ActiveFlag,
                       }
+                      console.log(updatedCourseDetail)
                       await updateCourseDetail(updatedCourseDetail).then((object: any) => {
                         if(object.success) {
                           onClose();
