@@ -250,8 +250,6 @@ export type MsAssessment = {
     AcademicPeriodId: string;
     SessionNumber: number;
     SessionId: string;
-    EffectiveStartDate: any;
-    EffectiveEndDate: any;
     CreatedBy: string;
     CreatedDate: any;
     UpdatedBy: string | null;
