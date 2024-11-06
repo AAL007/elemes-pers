@@ -78,8 +78,6 @@ const defaultAssessment : MsAssessment = {
   AcademicPeriodId: "",
   SessionNumber: 0,
   SessionId: "",
-  EffectiveStartDate: parseAbsoluteToLocal(new Date().toISOString()),
-  EffectiveEndDate: parseAbsoluteToLocal(new Date().toISOString()),
   CreatedBy: "",
   CreatedDate: new Date().toISOString(),
   UpdatedBy: "",
@@ -121,8 +119,6 @@ const AssignmentManagement = () => {
   const [touched, setTouched] = React.useState(false);
   const [touched2, setTouched2] = React.useState(false);
   const [touched3, setTouched3] = React.useState(false);
-  const [effectiveStartDate, setEffectiveStartDate] = React.useState(parseAbsoluteToLocal(today));
-  const [effectiveEndDate, setEffectiveEndDate] = React.useState(parseAbsoluteToLocal(today));
   const [classes, setClasses] = React.useState<SelectList[]>([]);
   const [courses, setCourses] = React.useState<SelectList[]>([]);
   const [sessionNumber, setSessionNumber] = React.useState<string>("");
@@ -173,24 +169,22 @@ const AssignmentManagement = () => {
     setIsFetchingAssessment(true);
     fetchAssessment(courseId, classId, academicPeriod).then((object: any) => {
       const assessments = object.data.map((z: any) => {
-        const file = fetchFileFromUrl(z.AssessmentUrl);
+        const file = fetchFileFromUrl(z.assessmentUrl);
         return {
-          AssessmentId: z.AssessmentId,
-          AssessmentName: z.AssessmentName,
-          AssessmentUrl: z.AssessmentUrl,
+          AssessmentId: z.assessmentId,
+          AssessmentName: z.assessmentName,
+          AssessmentUrl: z.assessmentUrl,
           File: file,
-          CourseId: z.CourseId,
-          ClassId: z.ClassId,
-          Chances: z.Chances,
-          AcademicPeriodId: z.AcademicPeriodId,
-          SessionNumber: z.SessionNumber,
-          EffectiveStartDate: z.EffectiveStartDate,
-          EffectiveEndDate: z.EffectiveEndDate,
-          CreatedBy: z.CreatedBy,
-          CreatedDate: z.CreatedDate,
-          UpdatedBy: z.UpdatedBy,
-          UpdatedDate: z.UpdatedDate,
-          ActiveFlag: parseAbsoluteToLocal(z.EffectiveStartDate) <= parseAbsoluteToLocal(today) && parseAbsoluteToLocal(today) <= parseAbsoluteToLocal(z.EffectiveEndDate) ? true : false,
+          CourseId: z.courseId,
+          ClassId: z.classId,
+          Chances: z.chances,
+          AcademicPeriodId: z.academicPeriodId,
+          SessionNumber: z.sessionNumber,
+          CreatedBy: z.createdBy,
+          CreatedDate: z.createdDate,
+          UpdatedBy: z.updatedBy,
+          UpdatedDate: z.updatedDate,
+          ActiveFlag: z.activeFlag,
         }
       })
       setAssessments(assessments || []);
@@ -320,12 +314,12 @@ const AssignmentManagement = () => {
           <div className="relative flex items-center gap-2">
             <Tooltip content="Edit Assignment">
               <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {setIsEdit(true); setEffectiveStartDate(parseAbsoluteToLocal(assessmentObj.EffectiveStartDate)); setEffectiveEndDate(parseAbsoluteToLocal(assessmentObj.EffectiveEndDate)); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}} />
+                <EditIcon onClick={() => {setIsEdit(true); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}} />
               </span>
             </Tooltip>
             <Tooltip color="danger" content="Delete Assigment">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
-                <DeleteIcon onClick={() => {setIsDelete(true); setEffectiveStartDate(parseAbsoluteToLocal(assessmentObj.EffectiveStartDate)); setEffectiveEndDate(parseAbsoluteToLocal(assessmentObj.EffectiveEndDate)); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}}/>
+                <DeleteIcon onClick={() => {setIsDelete(true); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}}/>
               </span>
             </Tooltip>
             <Tooltip content="Preview Assessment">
@@ -482,8 +476,6 @@ const AssignmentManagement = () => {
           setUploadClicked(false);
           setExistingFile(null);
           setAssessment(defaultAssessment);
-          setEffectiveStartDate(parseAbsoluteToLocal(today));
-          setEffectiveEndDate(parseAbsoluteToLocal(today));
           setErrorMessage("");
           onOpenChange()
         }}
@@ -540,26 +532,6 @@ const AssignmentManagement = () => {
                         </SelectItem>
                       ))}
                     </Select>
-                    <DatePicker
-                        label="Effective Start Date"
-                        calendarWidth={700}
-                        granularity='second'
-                        labelPlacement="inside"
-                        variant="bordered"
-                        onChange={setEffectiveStartDate}
-                        showMonthAndYearPickers
-                        value={effectiveStartDate}
-                    />
-                    <DatePicker
-                        label="Effective End Date"
-                        granularity='second'
-                        labelPlacement="inside"
-                        variant="bordered"
-                        calendarWidth={700}
-                        onChange={setEffectiveEndDate}
-                        showMonthAndYearPickers
-                        value={effectiveEndDate}
-                    />
                     <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
                       <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
                       <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
@@ -575,8 +547,6 @@ const AssignmentManagement = () => {
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={() => {
                   setAssessment(defaultAssessment);
-                  setEffectiveStartDate(parseAbsoluteToLocal(today));
-                  setEffectiveEndDate(parseAbsoluteToLocal(today));
                   setIsEdit(false);
                   setIsDelete(false);
                   setIsCreate(false);
@@ -590,8 +560,6 @@ const AssignmentManagement = () => {
                 {isCreate ? (
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
-                    const convertedEffectiveStartDate = convertDate(effectiveStartDate);
-                    const convertedEffectiveEndDate = convertDate(effectiveEndDate);
                     try{
                       let assessmentId = await generateGUID();
                       let blobUrl = await uploadFileToAzureBlobStorage("assessment", files[0], courseLabel, assessmentId);
@@ -605,8 +573,6 @@ const AssignmentManagement = () => {
                         AcademicPeriodId: academicPeriod,
                         SessionNumber: parseInt(sessionNumber),
                         SessionId: '',
-                        EffectiveStartDate: convertedEffectiveStartDate,
-                        EffectiveEndDate: convertedEffectiveEndDate,
                         CreatedBy: userData.name,
                         CreatedDate: new Date().toISOString(),
                         UpdatedBy: null,
@@ -624,8 +590,6 @@ const AssignmentManagement = () => {
                       setIsCreate(false);
                       setUploadClicked(false);
                       setExistingFile(null);
-                      setEffectiveStartDate(parseAbsoluteToLocal(today));
-                      setEffectiveEndDate(parseAbsoluteToLocal(today));
                       setAssessment(defaultAssessment);
                       fetchingAssessment(courseId, classId, academicPeriod);
                       setErrorMessage("");
@@ -641,8 +605,6 @@ const AssignmentManagement = () => {
                     try {
                       console.log(files)
                       let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage("assessment", files[0], courseLabel, assessment.AssessmentId) : assessment.AssessmentUrl;
-                      const convertedEffectiveStartDate = convertDate(effectiveStartDate);
-                      const convertedEffectiveEndDate = convertDate(effectiveEndDate);
                       let updatedAssessment: MsAssessment = {
                         AssessmentId: assessment.AssessmentId,
                         AssessmentName: assessment.AssessmentName,
@@ -653,8 +615,6 @@ const AssignmentManagement = () => {
                         AcademicPeriodId: assessment.AcademicPeriodId,
                         SessionNumber: parseInt(sessionNumber),
                         SessionId: assessment.SessionId,
-                        EffectiveStartDate: convertedEffectiveStartDate,
-                        EffectiveEndDate: convertedEffectiveEndDate,
                         CreatedBy: assessment.CreatedBy,
                         CreatedDate: assessment.CreatedDate,
                         UpdatedBy: userData.name,
@@ -667,8 +627,6 @@ const AssignmentManagement = () => {
                           setIsEdit(false);
                           setUploadClicked(false);
                           setExistingFile(null);
-                          setEffectiveStartDate(parseAbsoluteToLocal(today));
-                          setEffectiveEndDate(parseAbsoluteToLocal(today));
                           setAssessment(defaultAssessment);
                           fetchingAssessment(courseId, classId, academicPeriod);
                           setErrorMessage("");
@@ -693,8 +651,6 @@ const AssignmentManagement = () => {
                           setUploadClicked(false);
                           setExistingFile(null);
                           setIsDelete(false);
-                          setEffectiveStartDate(parseAbsoluteToLocal(today));
-                          setEffectiveEndDate(parseAbsoluteToLocal(today));
                           setAssessment(defaultAssessment);
                           fetchingAssessment(courseId, classId, academicPeriod);
                           setErrorMessage("");

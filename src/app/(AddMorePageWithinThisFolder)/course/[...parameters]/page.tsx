@@ -61,6 +61,7 @@ type SessionList = {
     sessionNumber: number;
     isContentClicked: boolean;
     isAssignmentClicked: boolean;
+    isSessionLocked: boolean;
 }
 
 export type People = {
@@ -86,8 +87,6 @@ export type AssignmentResponse = {
     assessmentId: string;
     assessmentUrl: string;
     assessmentChances: number;
-    effectiveStartDate: string;
-    effectiveEndDate: string;
     sessionNumber: number;
     studentChances: number;
     createdDate: string;
@@ -139,6 +138,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     const [startTime, setStartTime] = React.useState<number | null>(null);
     const [duration, setDuration] = React.useState<number>(0);
     const [existingRating, setExistingRating] = React.useState<number | null>(null);
+    const [disabledKeys, setDisabledKeys] = React.useState<string[]>([]);
 
     const handleFileUpload = (files: File[]) => {
         setFiles(files);
@@ -152,7 +152,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             return;
         }
         const sessionsList = await Promise.all(res.data.map(async(z: any) => {
-            const file = z.contentUrl != null ? await fetchFileFromUrl(z.contentUrl) : null;
+            const file = (z.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? await fetchFileFromUrl(z.contentUrl) : null;
             return {
                 contentUrl: z.contentUrl,
                 file: file,
@@ -160,9 +160,12 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 sessionName: z.sessionName,
                 sessionNumber: z.sessionNumber,
                 isContentClicked: z.isContentClicked,
-                isAssignmentClicked: z.isAssignmentClicked
+                isAssignmentClicked: z.isAssignmentClicked,
+                isSessionLocked: z.isSessionLocked
             }
         }))
+        const disabledKeys = sessionsList.filter(x => x.isSessionLocked).map(x => x.sessionId);
+        setDisabledKeys(disabledKeys);
         setSessionsList(sessionsList);
         setIsLoading(false);
     }
@@ -602,7 +605,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                     <>
                         <Tabs className="flex w-full flex-col" variant="underlined" aria-label="Course Detail">
                             <Tab key={'sessions'} title={'Sessions'}>
-                                <Tabs onSelectionChange={(e) => {setSessionId(String(e))}} variant="light" className="flex w-full flex-col" aria-label="Sessions">
+                                <Tabs disabledKeys={disabledKeys} onSelectionChange={(e) => {setSessionId(String(e))}} variant="light" className="flex w-full flex-col" aria-label="Sessions">
                                     {sessionsList.map((session) => (
                                         <Tab key={session.sessionId} title={`Session ${session.sessionNumber}`}>
                                             <Card>
@@ -610,7 +613,9 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                     <Tabs selectedKey={selected} onSelectionChange={(e) => {setSelected(String(e))}} className="flex w-full flex-col" aria-label="Session Detail">
                                                         <Tab key={'content'} title={session.sessionName}>
                                                             <div key={'content'}>
-                                                                {session.file != null ? renderFile(session.file) : <p>No content available</p>}
+                                                                {session.file != null ? renderFile(session.file) : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
+                                                                    <iframe src={session.contentUrl} className="w-full h-[80vh]" allowFullScreen={true}></iframe>
+                                                                ) : <p>No content available</p>}
                                                             </div>
                                                         </Tab>
                                                         <Tab key={'assignment'} title={'Assignment'}>

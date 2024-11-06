@@ -22,7 +22,7 @@ export async function fetchLecturerClassCourse(userId: string, academicPeriodId:
 }
 
 export async function fetchAssessment(courseId: string, classId: string, academicPeriodId: string) {
-    const { data, error } = await supabase.from('MsAssessment').select().eq('CourseId', courseId).eq('ClassId', classId).eq('AcademicPeriodId', academicPeriodId).eq('ActiveFlag', 'Y')
+    const { data, error } = await supabase.rpc('fetch_assessment', {course_id: courseId, class_id: classId, academic_period_id: academicPeriodId})
     if(error){
         return {success: false, message: error.message, data: []}
     }
