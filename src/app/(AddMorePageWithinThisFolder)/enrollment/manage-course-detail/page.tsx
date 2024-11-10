@@ -56,7 +56,6 @@ import {
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { Tooltip } from "@nextui-org/react"
 import { generateGUID, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
-import { blob } from "stream/consumers";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
