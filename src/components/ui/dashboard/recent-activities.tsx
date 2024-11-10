@@ -50,7 +50,7 @@ const RecentActivities : React.FC<RecentActivitiesProps> = ({data}) => {
           {data.map((item, index) => {
             const isLastItem = index === data.length - 1;
             return (
-              <TimelineItem>
+              <TimelineItem key={index}>
               <TimelineOppositeContent>{item.time}</TimelineOppositeContent>
               <TimelineSeparator>
                 <TimelineDot color={(item.activity.toLowerCase() == "created" || item.activity.toLocaleLowerCase() == "finished" || item.activity.toLowerCase() == "added") ? "success" : item.activity.toLowerCase() == "updated" ? "primary" : "error"} variant="outlined" />

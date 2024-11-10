@@ -108,7 +108,7 @@ const DonutChart: React.FC<DonutChartProps> = ({label, data, numberOfData, title
           <Stack spacing={3} mt={7} direction="row">
             {label.map((role, index) => {
               return(
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack key={index} direction="row" spacing={1} alignItems="center">
                   <Avatar
                     sx={{ width: 9, height: 9, bgcolor: colors[index], svg: { display: 'none' } }}
                   ></Avatar>

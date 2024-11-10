@@ -139,6 +139,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     const [duration, setDuration] = React.useState<number>(0);
     const [existingRating, setExistingRating] = React.useState<number | null>(null);
     const [disabledKeys, setDisabledKeys] = React.useState<string[]>([]);
+    const [majorActiveTab, setMajorActiveTab] = React.useState<string>('sessions');
 
     const handleFileUpload = (files: File[]) => {
         setFiles(files);
@@ -197,9 +198,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     }, [selected])
 
     useEffect(() => {
-        if(selected === "content"){
-            setStartTime(Date.now());
-        }else{
+        if(majorActiveTab != 'sessions') {
             if(startTime){
                 const endTime = Date.now();
                 const duration = endTime - startTime;
@@ -207,8 +206,20 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 setDuration(Math.round(duration/1000));
                 setStartTime(null)
             }
+        }else{
+            if(selected === "content"){
+                setStartTime(Date.now());
+            }else{
+                if(startTime){
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+                    console.log(`User spent ${Math.round(duration / 1000)} seconds on the content tab`)
+                    setDuration(Math.round(duration/1000));
+                    setStartTime(null)
+                }
+            }
         }
-    }, [selected, sessionId])
+    }, [selected, sessionId, majorActiveTab])
 
     useEffect(() => {
         if(duration == 0){
@@ -603,7 +614,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                     </div>
                 ) : (sessionsList.length != 0 && !isLoading) ? (
                     <>
-                        <Tabs className="flex w-full flex-col" variant="underlined" aria-label="Course Detail">
+                        <Tabs selectedKey={majorActiveTab} onSelectionChange={(e) => setMajorActiveTab(String(e))} className="flex w-full flex-col" variant="underlined" aria-label="Course Detail">
                             <Tab key={'sessions'} title={'Sessions'}>
                                 <Tabs disabledKeys={disabledKeys} onSelectionChange={(e) => {setSessionId(String(e))}} variant="light" className="flex w-full flex-col" aria-label="Sessions">
                                     {sessionsList.map((session) => (

@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { Modal, ModalBody, ModalHeader, ModalFooter, ModalContent, Button, Radio, RadioGroup } from "@nextui-org/react";
+import { questionnairePrediction } from "@/app/api/machine-learning/questionnaire-model";
 
 const options = [
     {id: 1, option: 'Strongly Disagree'},
@@ -13,43 +14,43 @@ const options = [
 
 const questions = [
     {id: 1, question: 'I learn better by reading what the teacher writes on the chalkboard.', options},
-    {id: 2, question: 'I prefer to learn by doing something in class.', options},
-    {id: 3, question: 'I learn better in class when the teacher gives a lecture', options},
-    {id: 4, question: 'When I do things in class, I learn better.', options},
-    {id: 5, question: 'When someone tells me how to do something in class, I learn it better.', options},
-    {id: 6, question: 'When I read instructions, I remember them better.', options},
-    {id: 7, question: 'I understand better when I read instructions.', options},
-    {id: 8, question: 'I understand things better in class when I participate in role-playing.', options},
-    {id: 9, question: 'I remember things I have heard in class better than things I have read.', options},
-    {id: 10, question: 'I enjoy learning in class by doing experiments.', options},
-    {id: 11, question: 'I learn better by reading than by listening to someone.', options},
-    {id: 12, question: 'I learn better in class when i listen to someone.', options},
-    {id: 13, question: 'I grasp concepts more effectively in class when i engage in role-playing activities', options},
-    {id: 14, question: 'I learn more by reading textbooks than by listening to lectures.', options},
-    {id: 15, question: 'When the teacher tells me the instructions I understand better.', options}
+    {id: 11, question: 'I prefer to learn by doing something in class.', options},
+    {id: 9, question: 'I learn better in class when the teacher gives a lecture', options},
+    {id: 12, question: 'When I do things in class, I learn better.', options},
+    {id: 7, question: 'When someone tells me how to do something in class, I learn it better.', options},
+    {id: 2, question: 'When I read instructions, I remember them better.', options},
+    {id: 3, question: 'I understand better when I read instructions.', options},
+    {id: 14, question: 'I understand things better in class when I participate in role-playing.', options},
+    {id: 8, question: 'I remember things I have heard in class better than things I have read.', options},
+    {id: 13, question: 'I enjoy learning in class by doing experiments.', options},
+    {id: 4, question: 'I learn better by reading than by listening to someone.', options},
+    {id: 10, question: 'I learn better in class when i listen to someone.', options},
+    {id: 15, question: 'I grasp concepts more effectively in class when i engage in role-playing activities', options},
+    {id: 5, question: 'I learn more by reading textbooks than by listening to lectures.', options},
+    {id: 6, question: 'When the teacher tells me the instructions I understand better.', options}
 ]
 
-type Answer = {
-    question: string;
+export type Answer = {
+    questionId: number;
     answer: number;
 }
 
 const defaultAnswers: Answer[] = [
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
-    {question: '', answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
+    {questionId: 0, answer: 0},
 ]
 
 const LearningStyleQuestionnaire = ({
@@ -64,19 +65,40 @@ const LearningStyleQuestionnaire = ({
     const handleAnswerChange = (value: number) => {
         setAnswers((prevAnswers) =>
             prevAnswers.map((answer, index) =>
-              index === counter ? { question: questions[counter].question, answer: value } : answer
+              index === counter ? { questionId: questions[counter].id, answer: value } : answer
             )
         );
     }
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         let emptyAnswer = answers.filter((answer) => answer.answer === 0);
         if(emptyAnswer.length > 0){
             alert('Please answer all the questions');
             return;
         }
-        console.log(answers);
-        setIsOpen(false);
+        const sortedAnswer = answers.sort((a, b) => a.questionId - b.questionId);
+        console.log(sortedAnswer);
+        const answerValues = sortedAnswer.map((answer) => answer.answer);
+        questionnairePrediction(answerValues);
+        // let reqBody = {
+        //     answerValues: answerValues
+        // };
+        // console.log(reqBody)
+        // const response = await fetch("api/machine-learning", {
+        //     method: "POST",
+        //     headers: {
+        //         "Content-Type": "application/json",
+        //     },
+        //     body: JSON.stringify(reqBody),
+        // })
+        // const result = await response.json()
+        // if(response.ok){
+        //     console.log(result);
+        // }
+        // else{
+        //     console.log(result);
+        // }
+        // setIsOpen(false);
     }
 
     useEffect(() => {
