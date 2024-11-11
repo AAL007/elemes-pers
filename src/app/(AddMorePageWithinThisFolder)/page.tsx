@@ -30,7 +30,6 @@ import LecturerBarChart from '@/components/ui/dashboard/lecturer-bar-chart';
 import StudentBarChart from '@/components/ui/dashboard/student-bar-chart';
 import Loading from './loading';
 import LearningStyleQuestionnaire from '@/components/ui/learning-style-questionnaire';
-import { set } from 'lodash';
 
 const Dashboard = () => {
   const [countsActiveUser, setCountsActiveUser] = useState<number[]>([]);
@@ -49,15 +48,12 @@ const Dashboard = () => {
 
   const fetchingAttendanceStatus = async () => {
     const res = await fetchAttendanceStatus(userData.id, courseId);
-    console.log(res)
     if (!res.success) {
-      console.log(res)
       alert(res.message);
       return;
     }
     let classes = ['Present', 'Absent', 'Not Started'];
     setClasses(classes)
-    console.log(res.data)
     let countPresent = res.data.filter((x: any) => x.attendanceStatus == 'Present').length;
     let countAbsent = res.data.filter((x: any) => x.attendanceStatus == 'Absent').length;
     let countNotStarted = res.data.filter((x: any) => x.attendanceStatus == 'Not Started').length;
@@ -221,7 +217,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <LearningStyleQuestionnaire isLearningStyleNotExist={isLearningStyleNotExist}/>
+      <LearningStyleQuestionnaire isLearningStyleNotExist={true} userId={userData.id}/>
       <PageContainer title="Dashboard" description="Landing Page">
         <Box component="div" className={isLearningStyleNotExist ? 'overflow-hidden' : ''}>
           <Grid container spacing={3}>
