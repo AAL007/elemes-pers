@@ -217,7 +217,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <LearningStyleQuestionnaire isLearningStyleNotExist={true} userId={userData.id}/>
+      <LearningStyleQuestionnaire setIsLearningStyleNotExist={setIsLearningStyleNotExist} isLearningStyleNotExist={isLearningStyleNotExist} userId={userData.id}/>
       <PageContainer title="Dashboard" description="Landing Page">
         <Box component="div" className={isLearningStyleNotExist ? 'overflow-hidden' : ''}>
           <Grid container spacing={3}>

@@ -73,9 +73,11 @@ const defaultAnswers: Answer[] = [
 ]
 
 const LearningStyleQuestionnaire = ({
+    setIsLearningStyleNotExist,
     isLearningStyleNotExist = false,
     userId = ''
 } : {
+    setIsLearningStyleNotExist: (value: boolean) => void;
     isLearningStyleNotExist?: boolean;
     userId: string;
 }) => {
@@ -97,13 +99,15 @@ const LearningStyleQuestionnaire = ({
             const inputData = tf.tensor2d([answer], [1, answer.length]);
             const output = model.predict(inputData) as tf.Tensor;
             const predictedClass = output.argMax(-1).dataSync()[0];
-            console.log(predictedClass)
             const learningStyles = ['Visual', 'Kinesthetic', 'Auditory']
-            console.log(learningStyles[predictedClass]);
+            // console.log(learningStyles[predictedClass]);
             const res = await updateLearningStyle(learningStyles[predictedClass], userId);
             if(!res.success){
                 alert(res.message);
+                return;
             }
+            setIsLearningStyleNotExist(false);
+            setIsOpen(false);
         } catch (error) {
             console.error(error)
         }
