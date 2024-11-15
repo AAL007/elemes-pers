@@ -19,11 +19,6 @@ import {
   Pagination,
   Selection,
   SortDescriptor,
-  ModalBody,
-  ModalHeader,
-  ModalFooter,
-  Modal, 
-  ModalContent,
   useDisclosure,
   Tooltip,
   Spinner,
@@ -39,21 +34,18 @@ import { loadUserFromStorage } from "@/lib/user-slice";
 import { SelectList, Score } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
 import { fetchActivePeriod, fetchLecturerClassCourse, fetchAssessment } from "@/app/api/assignment/assignment-management";
-import { fetchStudentsAnswer, createOrUpdateScore, fetchStudentScore } from "@/app/api/score/student-result";
-import { AssessmentAnswerResponse } from "@/app/api/data-model";
+import { fetchStudentsAnswer } from "@/app/api/score/student-result";
+import { ScoreResponse } from "@/app/api/data-model";
 import { ScoreIcon } from "@/components/icon/score-icon";
-import { fetchStudent } from "@/app/api/user-management/manage-users";
 
 const columns = [
-  {name: "STUDENT NAME", uid: "StudentId", sortable: true},
-  {name: "REMAINING CHANCES", uid: "Chances"},
+  {name: "STUDENT NAME", uid: "StudentName", sortable: true},
   {name: "SCORE", uid: "Score"},
   {name: "CREATED DATE", uid: "CreatedDate"},
-  {name: "UPDATED DATE", uid: "UpdatedDate"},
-  {name: "ACTIONS", uid: "Actions"},
+  // {name: "ACTIONS", uid: "Actions"},
 ];
 
-const INITIAL_VISIBLE_COLUMNS = ["StudentId", "Chances", "Score", "CreatedDate", "UpdatedDate", "Actions"];
+const INITIAL_VISIBLE_COLUMNS = ["StudentName", "Score", "CreatedDate"];
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
@@ -68,19 +60,15 @@ const StudentResult = () => {
   const [statusFilter, setStatusFilter] = React.useState<Selection>("all");
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
   const [sortDescriptor, setSortDescriptor] = React.useState<SortDescriptor>({
-    column: "StudentId",
+    column: "StudentName",
     direction: "ascending",
   });
   const [isFetchingStudentAnswer, setIsFetchingStudentAnswer] = React.useState(true);
   const [touched, setTouched] = React.useState(false);
   const [touched2, setTouched2] = React.useState(false);
   const [touched3, setTouched3] = React.useState(false);
-  const [isLoading, setIsLoading] = React.useState(false);
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [academicPeriod, setAcademicPeriod] = React.useState<string>("");
-  const [score, setScore] = React.useState<number>(0);
-  const [assessmentAnswer, setAssessmentAnswer] = React.useState<AssessmentAnswerResponse | null>(null);
-  const [assessmentAnswers, setAssessmentAnswers] = React.useState<AssessmentAnswerResponse[]>([]);
+  const [assessmentAnswers, setAssessmentAnswers] = React.useState<ScoreResponse[]>([]);
   const [classes, setClasses] = React.useState<SelectList[]>([]);
   const [classId, setClassId] = React.useState<string>("");
   const [courses, setCourses] = React.useState<SelectList[]>([]);
@@ -145,8 +133,8 @@ const StudentResult = () => {
         fetchAssessment(courseId, classId, academicPeriod).then((object: any) => {
           const assessments = object.data.map((z: any) => {
             return {
-                key: z.AssessmentId,
-                label: z.AssessmentName,
+                key: z.assessmentId,
+                label: z.assessmentName,
             }
           })
           setAssessments(assessments || []);
@@ -161,25 +149,14 @@ const StudentResult = () => {
     const fetchingStudentsAnswerScore = async () => {
       setAssessmentAnswers([]);
       setIsFetchingStudentAnswer(true);
-      let res = await fetchStudentScore(assessmentId)
-      let studentScore = res.data.map((z: any) => {
-        return {
-          StudentId: z.StudentId,
-          AssessmentId: z.AssessmentId,
-          Score: z.Score,
-        }
-      })
       fetchStudentsAnswer(assessmentId).then((object: any) => {
         const assessmentAnswers = object.data.map((z: any) => {
           return {
               StudentId: z.studentId,
               StudentName: z.studentName,
               AssessmentId: z.assessmentId,
-              AnswerUrl: z.answerUrl,
-              Score: studentScore.find((x: any) => x.StudentId === z.studentId && x.AssessmentId === z.assessmentId)?.Score || 0,
+              Score: z.score,
               CreatedDate: z.createdDate,
-              UpdatedDate: z.updatedDate,
-              Chances: z.chances,
           }
         })
         setAssessmentAnswers(assessmentAnswers|| []);
@@ -224,31 +201,24 @@ const StudentResult = () => {
 
   const sortedItems = React.useMemo(() => {
     return [...items].sort((a, b) => {
-      const first = a[sortDescriptor.column as keyof AssessmentAnswerResponse];
-      const second = b[sortDescriptor.column as keyof AssessmentAnswerResponse];
+      const first = a[sortDescriptor.column as keyof ScoreResponse];
+      const second = b[sortDescriptor.column as keyof ScoreResponse];
       const cmp = first < second ? -1 : first > second ? 1 : 0;
 
       return sortDescriptor.direction === "descending" ? -cmp : cmp;
     });
   }, [sortDescriptor, items]);
 
-  const renderCell = React.useCallback((assessmentAnswer: AssessmentAnswerResponse, columnKey: React.Key) => {
-    const cellValue = assessmentAnswer[columnKey as keyof AssessmentAnswerResponse];
+  const renderCell = React.useCallback((assessmentAnswer: ScoreResponse, columnKey: React.Key) => {
+    const cellValue = assessmentAnswer[columnKey as keyof ScoreResponse];
 
     switch (columnKey) {
-      case "StudentId":
+      case "StudentName":
         return (
           <div className="flex flex-col">
             {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{assessmentAnswer.StudentName}</p>
           </div>
-        );
-      case "Chances":
-        return (
-            <div className="flex flex-col">
-                {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
-                <p className="text-bold text-tiny capitalize text-default-400">{assessmentAnswer.Chances}</p>
-            </div>
         );
       case "Score":
         return (
@@ -264,28 +234,21 @@ const StudentResult = () => {
             <p className="text-bold text-tiny capitalize text-default-400">{formatDate(assessmentAnswer.CreatedDate)}</p>
           </div>
         );
-        case "UpdatedDate":
-          return (
-            <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
-              <p className="text-bold text-tiny capitalize text-default-400">{assessmentAnswer.UpdatedDate == null ?  "N/A" : formatDate(assessmentAnswer.UpdatedDate)}</p>
-            </div>
-          );
-      case "Actions":
-        return (
-          <div className="relative flex items-center gap-2">
-            <Tooltip content="Preview Assignment">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EyeIcon onClick={() => {window.open(assessmentAnswer.AnswerUrl, '_blank')}}/>
-                </span>
-            </Tooltip>
-            <Tooltip color="warning" content="Score the Assignment">
-                <span className="text-lg text-warning-400 cursor-pointer active:opacity-50">
-                  <ScoreIcon onClick={() => {setScore(assessmentAnswer.Score); setAssessmentAnswer(assessmentAnswer); onOpen()}}/>
-                </span>
-            </Tooltip>
-          </div>
-        );
+      // case "Actions":
+      //   return (
+      //     <div className="relative flex items-center gap-2">
+      //       {/* <Tooltip content="Preview Assignment">
+      //           <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
+      //             <EyeIcon onClick={() => {window.open(assessmentAnswer.AnswerUrl, '_blank')}}/>
+      //           </span>
+      //       </Tooltip> */}
+      //       {/* <Tooltip color="warning" content="Score the Assignment">
+      //           <span className="text-lg text-warning-400 cursor-pointer active:opacity-50">
+      //             <ScoreIcon onClick={() => {setScore(assessmentAnswer.Score); setAssessmentAnswer(assessmentAnswer); onOpen()}}/>
+      //           </span>
+      //       </Tooltip> */}
+      //     </div>
+      //   );
       default:
         return cellValue;
     }
@@ -399,74 +362,6 @@ const StudentResult = () => {
 
   return (
     <>
-      <Modal
-        backdrop="blur"
-        isDismissable={false}
-        isOpen={isOpen} 
-        onOpenChange={() => {
-          setScore(0);
-          setAssessmentAnswer(null);
-          onOpenChange()
-        }}
-        placement="top-center"
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">Insert {assessmentAnswer?.StudentName} Score</ModalHeader>
-              <ModalBody>
-                <Input
-                  type="number"
-                  autoFocus
-                  label={`${assessmentAnswer?.StudentName}'s Score`}
-                  placeholder="Enter score"
-                  variant="bordered"
-                  onChange={(e) => {setScore(Number(e.target.value))}}
-                  value={score.toString()}
-                />
-              </ModalBody>
-              <ModalFooter>
-                <Button color="danger" variant="flat" onPress={() => {
-                  setScore(0);
-                  setAssessmentAnswer(null);
-                  onClose();
-                }}>
-                  Close
-                </Button>
-                <Button color="primary" onPress={async() => {
-                  setIsLoading(true);
-                  try{
-                    let scoreObj: Score = {
-                      StudentId: assessmentAnswer?.StudentId || "",
-                      AssessmentId: assessmentAnswer?.AssessmentId || "",
-                      Score: score,
-                      CreatedBy: userData.name,
-                      CreatedDate: new Date().toISOString(),
-                      UpdatedBy: null,
-                      UpdatedDate: new Date(0).toISOString(),
-                    }
-                    await createOrUpdateScore(scoreObj).then((object: any) => {
-                      if(!object.success){
-                        alert(object.message)
-                        setIsLoading(false);
-                        return;
-                      }
-                    })
-                    setScore(0);
-                    setAssessmentAnswer(null);
-                    fetchingStudentsAnswerScore();
-                    onClose();
-                }finally{
-                  setIsLoading(false);
-                }
-                }}>
-                {isLoading ? <Spinner size="sm" color="default"/> : "Submit"}
-              </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
       <Box component="div">
         <div>
             <Grid container className="mt-0.5 mb-10">

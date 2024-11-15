@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Modal, ModalBody, ModalHeader, ModalFooter, ModalContent, Button, Radio, RadioGroup } from "@nextui-org/react";
+import * as tf from '@tensorflow/tfjs';
+import { updateLearningStyle } from "@/app/api/home/dashboard";
 
 const options = [
     {id: 1, option: 'Strongly Disagree'},
@@ -9,6 +11,24 @@ const options = [
     {id: 3, option: 'Neutral'},
     {id: 4, option: 'Agree'},
     {id: 5, option: 'Strongly Agree'}
+]
+
+const realQuestions = [
+    {id: 1, question: 'I learn better by reading what the teacher writes on the chalkboard.', options},
+    {id: 2, question: 'When I read instructions, I remember them better.', options},
+    {id: 3, question: 'I understand better when I read instructions.', options},
+    {id: 4, question: 'I learn better by reading than by listening to someone.', options},
+    {id: 5, question: 'I learn more by reading textbooks than by listening to lectures.', options},
+    {id: 6, question: 'When the teacher tells me the instructions I understand better.', options},
+    {id: 7, question: 'When someone tells me how to do something in class, I learn it better.', options},
+    {id: 8, question: 'I remember things I have heard in class better than things I have read.', options},
+    {id: 9, question: 'I learn better in class when the teacher gives a lecture', options},
+    {id: 10, question: 'I learn better in class when i listen to someone.', options},
+    {id: 11, question: 'I prefer to learn by doing something in class.', options},
+    {id: 12, question: 'When I do things in class, I learn better.', options},
+    {id: 13, question: 'I enjoy learning in class by doing experiments.', options},
+    {id: 14, question: 'I understand things better in class when I participate in role-playing.', options},
+    {id: 15, question: 'I grasp concepts more effectively in class when i engage in role-playing activities', options}
 ]
 
 const questions = [
@@ -29,7 +49,7 @@ const questions = [
     {id: 15, question: 'When the teacher tells me the instructions I understand better.', options}
 ]
 
-type Answer = {
+export type Answer = {
     question: string;
     answer: number;
 }
@@ -53,9 +73,13 @@ const defaultAnswers: Answer[] = [
 ]
 
 const LearningStyleQuestionnaire = ({
+    setIsLearningStyleNotExist,
     isLearningStyleNotExist = false,
+    userId = ''
 } : {
+    setIsLearningStyleNotExist: (value: boolean) => void;
     isLearningStyleNotExist?: boolean;
+    userId: string;
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [counter, setCounter] = useState(0);
@@ -69,14 +93,42 @@ const LearningStyleQuestionnaire = ({
         );
     }
 
-    const handleSubmit = () => {
+    const questionnairePrediction = async (answer: number[]) => {
+        try {
+            const model = await tf.loadLayersModel('model/model.json');
+            const inputData = tf.tensor2d([answer], [1, answer.length]);
+            const output = model.predict(inputData) as tf.Tensor;
+            const predictedClass = output.argMax(-1).dataSync()[0];
+            const learningStyles = ['Visual', 'Kinesthetic', 'Auditory']
+            // console.log(learningStyles[predictedClass]);
+            const res = await updateLearningStyle(learningStyles[predictedClass], userId);
+            if(!res.success){
+                alert(res.message);
+                return;
+            }
+            setIsLearningStyleNotExist(false);
+            setIsOpen(false);
+        } catch (error) {
+            console.error(error)
+        }
+    }
+    
+
+    const handleSubmit = async () => {
         let emptyAnswer = answers.filter((answer) => answer.answer === 0);
         if(emptyAnswer.length > 0){
             alert('Please answer all the questions');
             return;
         }
-        console.log(answers);
-        setIsOpen(false);
+        const sortedAnswer = realQuestions.map((x: any) => {
+            return {
+                question: x.question,
+                answer: answers.find((y: any) => y.question === x.question)?.answer ?? 1
+            }
+        })
+        console.log(sortedAnswer);
+        const answerValues = sortedAnswer.map((answer) => answer.answer);
+        questionnairePrediction(answerValues);
     }
 
     useEffect(() => {

@@ -71,10 +71,8 @@ const statusOptions = [
 const defaultAssessment : MsAssessment = {
   AssessmentId: "",
   AssessmentName: "",
-  AssessmentUrl: "",
   CourseId: "",
   ClassId: "",
-  Chances: 1,
   AcademicPeriodId: "",
   SessionNumber: 0,
   SessionId: "",
@@ -125,8 +123,6 @@ const AssignmentManagement = () => {
   const [sessionNumbers, setSessionNumbers] = React.useState<SelectList[]>([]);
   const [assessments, setAssessments] = React.useState<any[]>([]);
   const [academicPeriod, setAcademicPeriod] = React.useState<string>("");
-  const [files, setFiles] = React.useState<File[]>([]);
-  const [existingFile, setExistingFile] = React.useState<File | null>(null);
   const isValid = classId !==""
   const isValid2 = courseId !== ""
   const isValid3 = sessionNumber !== ""
@@ -169,15 +165,11 @@ const AssignmentManagement = () => {
     setIsFetchingAssessment(true);
     fetchAssessment(courseId, classId, academicPeriod).then((object: any) => {
       const assessments = object.data.map((z: any) => {
-        const file = fetchFileFromUrl(z.assessmentUrl);
         return {
           AssessmentId: z.assessmentId,
           AssessmentName: z.assessmentName,
-          AssessmentUrl: z.assessmentUrl,
-          File: file,
           CourseId: z.courseId,
           ClassId: z.classId,
-          Chances: z.chances,
           AcademicPeriodId: z.academicPeriodId,
           SessionNumber: z.sessionNumber,
           CreatedBy: z.createdBy,
@@ -227,10 +219,6 @@ const AssignmentManagement = () => {
       setSessionNumber(sessionNumbers[0]?.key ?? "");
     })
   }, [courseId])
-
-  const handleFileUpload = (files: File[]) => {
-    setFiles(files);
-  }
 
   const [page, setPage] = React.useState(1);
 
@@ -321,11 +309,6 @@ const AssignmentManagement = () => {
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
                 <DeleteIcon onClick={() => {setIsDelete(true); setSessionNumber(assessmentObj.SessionNumber.toString()); setAssessment(assessmentObj); onOpen()}}/>
               </span>
-            </Tooltip>
-            <Tooltip content="Preview Assessment">
-                <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  <EyeIcon onClick={() => {window.open(assessmentObj.AssessmentUrl, '_blank')}}/>
-                </span>
             </Tooltip>
           </div>
         );
@@ -474,7 +457,6 @@ const AssignmentManagement = () => {
           setIsDelete(false);
           setIsCreate(false);
           setUploadClicked(false);
-          setExistingFile(null);
           setAssessment(defaultAssessment);
           setErrorMessage("");
           onOpenChange()
@@ -500,18 +482,6 @@ const AssignmentManagement = () => {
                     <h5 className="text-default-400 ml-1" style={{ color: "red", fontSize: "12px" }}>
                       {errorMessage}
                     </h5>
-                    <Input
-                      autoFocus
-                      type="number"
-                      label="Submission Chances"
-                      min={1}
-                      max={10}
-                      placeholder="Enter the number of submission chances"
-                      variant="bordered"
-                      onClick={async() => await setUploadClicked(false)}
-                      onChange={(e) => {setAssessment({...assessment, Chances: e.target.value})}}
-                      value={assessment.Chances}
-                    />
                     <Select
                       required
                       label= "Session Number"
@@ -532,11 +502,6 @@ const AssignmentManagement = () => {
                         </SelectItem>
                       ))}
                     </Select>
-                    <div className={`border-2 ${uploadClicked ? 'border-black' : ''} border-350 rounded-2xl hover:${uploadClicked ? 'border-black' : 'border-gray-400'}`} onClick={() => setUploadClicked(true)}>
-                      <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "12.5px" }}>Upload Course Content</p>
-                      <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
-                      <FileUpload existingFile={existingFile} onChange={handleFileUpload} />
-                    </div>
                   </>
                 ) : (
                   <div className="flex flex-col gap-4">
@@ -551,7 +516,6 @@ const AssignmentManagement = () => {
                   setIsDelete(false);
                   setIsCreate(false);
                   setUploadClicked(false);
-                  setExistingFile(null);
                   setErrorMessage("");
                   onClose();
                 }}>
@@ -562,14 +526,11 @@ const AssignmentManagement = () => {
                     setIsLoading(true);
                     try{
                       let assessmentId = await generateGUID();
-                      let blobUrl = await uploadFileToAzureBlobStorage("assessment", files[0], courseLabel, assessmentId);
                       let newAssessment: MsAssessment = {
                         AssessmentId: assessmentId,
                         AssessmentName: assessment.AssessmentName,
-                        AssessmentUrl: blobUrl,
                         ClassId: classId,
                         CourseId: courseId,
-                        Chances: parseInt(assessment.Chances),
                         AcademicPeriodId: academicPeriod,
                         SessionNumber: parseInt(sessionNumber),
                         SessionId: '',
@@ -586,32 +547,28 @@ const AssignmentManagement = () => {
                           return;
                         }
                       })
-                      onClose();
-                      setIsCreate(false);
-                      setUploadClicked(false);
-                      setExistingFile(null);
-                      setAssessment(defaultAssessment);
-                      fetchingAssessment(courseId, classId, academicPeriod);
+                      window.location.href = `/assignment/create-edit-assignment/create/${assessmentId}`;
+                      // onClose();
+                      // setIsCreate(false);
+                      // setUploadClicked(false);
+                      // setAssessment(defaultAssessment);
+                      // fetchingAssessment(courseId, classId, academicPeriod);
                       setErrorMessage("");
-                    }finally{
-                      setIsLoading(false);
+                    }catch(e){
+                      alert(e);
                     }
                     }}>
-                    {isLoading ? <Spinner size="sm" color="default"/> : "Add"}
+                    {isLoading ? <Spinner size="sm" color="default"/> : "Next"}
                   </Button>
                 ) : isEdit ? (
                   <Button color="primary" onPress={async () => {
                     setIsLoading(true);
                     try {
-                      console.log(files)
-                      let blobUrl = (files[0] != null && files[0] != undefined) ? await replaceFileInAzureBlobStorage("assessment", files[0], courseLabel, assessment.AssessmentId) : assessment.AssessmentUrl;
                       let updatedAssessment: MsAssessment = {
                         AssessmentId: assessment.AssessmentId,
                         AssessmentName: assessment.AssessmentName,
-                        AssessmentUrl: blobUrl,
                         ClassId: assessment.ClassId,
                         CourseId: assessment.CourseId,
-                        Chances: parseInt(assessment.Chances),
                         AcademicPeriodId: assessment.AcademicPeriodId,
                         SessionNumber: parseInt(sessionNumber),
                         SessionId: assessment.SessionId,
@@ -623,33 +580,32 @@ const AssignmentManagement = () => {
                       }
                       await updateAssessment(updatedAssessment).then((object: any) => {
                         if(object.success) {
-                          onClose();
-                          setIsEdit(false);
-                          setUploadClicked(false);
-                          setExistingFile(null);
-                          setAssessment(defaultAssessment);
-                          fetchingAssessment(courseId, classId, academicPeriod);
-                          setErrorMessage("");
+                          window.location.href = `/assignment/create-edit-assignment/edit/${updatedAssessment.AssessmentId}`
+                          // onClose();
+                          // setIsEdit(false);
+                          // setUploadClicked(false);
+                          // setAssessment(defaultAssessment);
+                          // fetchingAssessment(courseId, classId, academicPeriod);
+                          // setErrorMessage("");
                         }else{
                           setErrorMessage(object.message);
                         }
                       })
-                    } finally {
-                      setIsLoading(false);
+                    } catch(e) {
+                      alert(e);
                     }
                   }}>
-                    {isLoading ? <Spinner color="default" size="sm"/> : "Edit"}
+                    {isLoading ? <Spinner color="default" size="sm"/> : "Next"}
                   </Button>
                 ) : (
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      let res = await deleteFileInAzureBlobStorageByUrl("assessment", courseLabel, assessment.AssessmentId);
+                      // let res = await deleteFileInAzureBlobStorageByUrl("assessment", courseLabel, assessment.AssessmentId);
                       await deleteAssessment(assessment.AssessmentId).then((object: any) => {
                         if(object.success){
                           onClose();
                           setUploadClicked(false);
-                          setExistingFile(null);
                           setIsDelete(false);
                           setAssessment(defaultAssessment);
                           fetchingAssessment(courseId, classId, academicPeriod);

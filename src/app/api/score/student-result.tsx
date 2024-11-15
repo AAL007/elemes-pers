@@ -13,18 +13,10 @@ export async function fetchStudentsAnswer(assessmentId: string){
     return {success: true, message: 'Data fetched successfully!', data: data}
 }
 
-export async function createOrUpdateScore(item: Score){
-    const { data, error } = await supabase.from('Score').upsert(item)
-    if(error){
-        return {success: false, message: error.message, data: []}
-    }
-    return {success: true, message: 'Data inserted successfully!', data: data}
-}
-
-export async function fetchStudentScore(assessmentId: string){
-    const { data, error } = await supabase.from('Score').select().eq('AssessmentId', assessmentId)
-    if(error){
-        return {success: false, message: error.message, data: []}
-    }
-    return {success: true, message: 'Data fetched successfully!', data: data}
-}
+// export async function fetchStudentScore(assessmentId: string){
+//     const { data, error } = await supabase.from('Score').select().eq('AssessmentId', assessmentId)
+//     if(error){
+//         return {success: false, message: error.message, data: []}
+//     }
+//     return {success: true, message: 'Data fetched successfully!', data: data}
+// }

@@ -88,6 +88,17 @@ export async function fetchTotalActiveUser() {
 }
 
 // Student
+export async function updateLearningStyle(learningStyleName: string, studentId: string){
+    const res = await supabase.from('MsLearningStyle').select('LearningStyleId').eq('LearningStyleName', learningStyleName).limit(1).single()
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+    const { data, error } = await supabase.from('MsStudent').update({LearningStyleId: res.data.LearningStyleId, UpdatedDate: new Date()}).eq('StudentId', studentId)
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data updated successfully!', data: data}
+}
 
 export async function fetchLearningStyle(studentId: string){
     const {data, error} = await supabase.from("MsStudent").select("LearningStyleId").eq("StudentId", studentId)
