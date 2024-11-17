@@ -367,7 +367,7 @@ const ManageStudents = () => {
     visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    classes.length,
+    enrollments,
     hasSearchFilter,
   ]);
 
