@@ -335,7 +335,7 @@ const StudentResult = () => {
     visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    classes.length,
+    assessmentAnswers,
     hasSearchFilter,
   ]);
 

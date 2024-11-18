@@ -484,7 +484,7 @@ const ManageSessionSchedule = () => {
     visibleColumns,
     onSearchChange,
     onRowsPerPageChange,
-    courses.length,
+    sessionSchedules,
     hasSearchFilter,
   ]);
 
