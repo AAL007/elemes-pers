@@ -36,8 +36,8 @@ const StudentBarChart : React.FC<BarChartProps> = ({title, userId, setCourseId})
         })
         setCourses(courses);
         setCourseDDL(courses.map((z: any) => z.label));
-        setCourseValue(courses[0].label);
-        setCourseId(courses[0].key);
+        setCourseValue(courses[0].label ?? "");
+        setCourseId(courses[0].key ?? "");
     }
 
     const handleCourseChange = (e: any) => {
