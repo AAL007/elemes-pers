@@ -179,6 +179,8 @@ const AssignmentManagement = () => {
           ActiveFlag: z.activeFlag,
         }
       })
+      console.log(assessments)
+      console.log(assessments.length)
       setAssessments(assessments || []);
     })
     setIsFetchingAssessment(false);
@@ -423,6 +425,7 @@ const AssignmentManagement = () => {
     onRowsPerPageChange,
     classes.length,
     hasSearchFilter,
+    assessments
   ]);
 
   const bottomContent = React.useMemo(() => {
@@ -603,7 +606,9 @@ const AssignmentManagement = () => {
                     try{
                       // let res = await deleteFileInAzureBlobStorageByUrl("assessment", courseLabel, assessment.AssessmentId);
                       await deleteAssessment(assessment.AssessmentId).then((object: any) => {
+                        console.log(assessment.AssessmentId)
                         if(object.success){
+                          console.log(object.message)
                           onClose();
                           setUploadClicked(false);
                           setIsDelete(false);
@@ -611,7 +616,7 @@ const AssignmentManagement = () => {
                           fetchingAssessment(courseId, classId, academicPeriod);
                           setErrorMessage("");
                         }else{
-                          setErrorMessage(object.message);
+                          alert(object.message)
                         }
                       })
                     }finally{
