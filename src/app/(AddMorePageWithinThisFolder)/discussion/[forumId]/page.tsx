@@ -30,7 +30,6 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
-import { set } from "lodash";
 
 const defaultThread: ForumThreadResponse = {
     ThreadId: '',
