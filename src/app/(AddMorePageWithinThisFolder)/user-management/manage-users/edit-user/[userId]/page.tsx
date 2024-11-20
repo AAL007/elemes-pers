@@ -99,15 +99,12 @@ const EditRole = ({params} : {params : {userId: string}}) => {
   };
 
   const convertDate = (date: any) => {
-    return new Date(
-      date.year,
-      date.month - 1,
-      date.day,
-      date.hour,
-      date.minute,
-      date.second,
-      date.millisecond
-    ).toISOString();
+    const { year, month, day } = date;
+    const newDate = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    // const offset = 7 * 60 * 60 * 1000;
+    newDate.setTime(newDate.getTime())
+    console.log(newDate)
+    return newDate;
   }
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -336,7 +333,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
                         variant='bordered'
-                        granularity='second'
+                        granularity='day'
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
                         showMonthAndYearPickers

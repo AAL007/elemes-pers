@@ -6,6 +6,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { 
     fetchSessionList,
+    fetchSessionStatus,
     fetchAttendanceList, 
     fetchPeople, 
     isAssignmentCleared,
@@ -55,8 +56,6 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import RatingModal from "@/components/ui/rating-modal";
 import { fetchQuestionAnswer } from "@/app/api/assignment/create-edit-assignment";
 import { question } from "../../assignment/create-edit-assignment/[...parameters]/page";
-import { set } from "lodash";
-import Image from "next/image";
 
 type SessionList = {
     assessmentId: string;
@@ -67,7 +66,6 @@ type SessionList = {
     sessionNumber: number;
     isContentClicked: boolean;
     isAssignmentClicked: boolean;
-    isSessionLocked: boolean;
 }
 
 export type People = {
@@ -247,13 +245,20 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 sessionNumber: z.sessionNumber,
                 isContentClicked: z.isContentClicked,
                 isAssignmentClicked: z.isAssignmentClicked,
-                isSessionLocked: z.isSessionLocked
             }
         }))
-        const disabledKeys = sessionsList.filter(x => x.isSessionLocked).map(x => x.sessionId);
-        setDisabledKeys(disabledKeys);
         setSessionsList(sessionsList);
         setIsLoading(false);
+    }
+
+    const fetchSessionStatuses = async () => {
+        const res = await fetchSessionStatus(userData.id, params.parameters[0], learningStyleId);
+        if(!res.success){
+            alert(res.message);
+            return;
+        }
+        const disabledKeys = res.data.filter((x: any) => x.isSessionLocked).map((x: any) => x.sessionId);
+        setDisabledKeys(disabledKeys);
     }
 
     const handleSessionLog = async(sessionId: string, isContentClicked: boolean, isAssignmentClicked: boolean) => {
@@ -335,6 +340,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             alert(res.message);
             return;
         }
+        fetchSessionStatuses();
         fetchIsActivityLogWithSameLearningStyleExist();
     }
 
@@ -393,6 +399,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         const unansweredQuestions = answers.filter(x => x.optionId == '');
         if(unansweredQuestions.length > 0){
             alert('Please answer all the questions');
+            setIsButtonClicked(false);
             return;
         }
         for(let i = 0; i < answers.length; i++){
@@ -413,7 +420,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             }
         }
         const correctAnswer = answers.filter(x => x.isAnswer == true).length;
-        const score = correctAnswer / answers.length * 100;
+        const score =Math.round(correctAnswer / answers.length * 100);
         const newScore: Score = {
             StudentId: userData.id,
             AssessmentId: assessmentId,
@@ -428,6 +435,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         }
         setIsButtonClicked(false);
         setIsQuizStarted(false);
+        fetchSessionStatuses();
         fetchIsAssignmentCleared(assessmentId);
     }
 
@@ -486,6 +494,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         // fetchAssignmentLists();
         fetchAttendances();
         fetchPeoples();
+        fetchSessionStatuses();
         fetchSessionLists();
     }, [params.parameters, learningStyleId])
 
