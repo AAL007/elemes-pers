@@ -106,6 +106,7 @@ const LearningStyleQuestionnaire = ({
                 alert(res.message);
                 return;
             }
+            alert('Your learning style has been updated successfully');
             setIsLearningStyleNotExist(false);
             setIsOpen(false);
         } catch (error) {

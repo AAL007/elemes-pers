@@ -372,23 +372,6 @@ const EditProfile = () => {
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
                         autoFocus
-                        label="User Password"
-                        className="w-full sm:max-w-[80%]"
-                        labelPlacement='inside'
-                        placeholder="Enter password"
-                        variant="bordered"
-                        endContent={
-                            <EyeComponent isOpen={isShowPassword} toggleVisibility={togglePasswordVisibility}/>
-                        }
-                        type={isShowPassword ? "text" : "password"}
-                        onChange={(e) => {setUserPassword(e.target.value)}}
-                        value={userPassword}
-                        errorMessage="Please enter a password"
-                    />
-                </Grid>
-                <Grid item xs={6} sm={6} className="mb-2">
-                    <Input
-                        autoFocus
                         label="User Phone Number"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -447,31 +430,11 @@ const EditProfile = () => {
                       ))}
                     </Select>
                 </Grid>
-                <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
-                    <Select
-                      required
-                      label= "User Role"
-                      variant="bordered"
-                      placeholder="Select user role"
-                      errorMessage={isRoleValid || !touched ? "" : "You need to select a role category"}
-                      isInvalid={isRoleValid || !touched ? false: true}
-                      selectedKeys={[userRole]}
-                      className="w-full sm:max-w-[80%]"
-                      onChange={(e) => {setUserRole(e.target.value)}}
-                      onClose={() => setTouched(true)}
-                      value={userRole}
-                    >
-                      {roleDropdownList.map((roles) => (
-                        <SelectItem key={roles.key}>
-                          {roles.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                </Grid>
                 {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
+                            isDisabled
                             required
                             label= "Study Program"
                             variant="bordered"
@@ -498,6 +461,7 @@ const EditProfile = () => {
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
                                 required
+                                isDisabled
                                 label= "Course"
                                 selectionMode="multiple"
                                 variant="bordered"

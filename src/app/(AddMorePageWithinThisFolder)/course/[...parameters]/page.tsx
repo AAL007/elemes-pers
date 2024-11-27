@@ -709,7 +709,22 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                         <Tab key={'content'} title={session.sessionName}>
                                                             <div key={'content'}>
                                                                 {session.file != null ? renderFile(session.file) : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
-                                                                    <iframe src={session.contentUrl} className="w-full h-[80vh]" allowFullScreen={true}></iframe>
+                                                                    <>
+                                                                        <p className="mb-4 font-semibold text-lg ">
+                                                                            {session.sessionNumber == 1 ? 
+                                                                            "Move the balloon near either the clothes or wall to see how the static electricity works. You can choose one or two balloons and see what will happen.":
+                                                                            session.sessionNumber == 2 ? 
+                                                                            "Use the property to affect the lever. Keep the plank balance. You can see how the mass of the object affect the plank balance." :
+                                                                            session.sessionNumber == 3 ?
+                                                                            "Play with the voltage and resistance. You can see how the circuit will change when either voltage or resistance is fixed and varied." : 
+                                                                            session.sessionNumber == 4 ? 
+                                                                            "Play with the resistivity, length and area. You can see how the resistance will change while changing the variables." :
+                                                                            session.sessionNumber == 5 ?
+                                                                            "You can select five modes to play include intro (basic of the sound waves), measure (measure how long is the sound waves based on the frequency and amplitude), two sources (sound waves from two sources), reflection (play with the frequency, amplitude, wall angle and position to see how the sound waves will reflect from the wall) and air pressure (play with the frequency, amplitude, audio control and air density in box to see the air pressure in the box)." :
+                                                                            "Play with the light include white light, monochromatic light and rainbows to see how a person will describe the light color."}
+                                                                        </p>
+                                                                        <iframe src={session.contentUrl} className="w-full h-[80vh]" allowFullScreen={true}></iframe>
+                                                                    </>
                                                                 ) : <p>No content available</p>}
                                                             </div>
                                                         </Tab>
