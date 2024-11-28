@@ -106,7 +106,7 @@ const LearningStyleQuestionnaire = ({
                 alert(res.message);
                 return;
             }
-            alert('Your learning style has been updated successfully');
+            alert(`Your learning style is ${learningStyles[predictedClass]}. You can update your learning style in my profile page.`);
             setIsLearningStyleNotExist(false);
             setIsOpen(false);
         } catch (error) {
