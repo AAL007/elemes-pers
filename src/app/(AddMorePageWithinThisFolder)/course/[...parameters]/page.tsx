@@ -248,6 +248,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             }
         }))
         setSessionsList(sessionsList);
+        handleSessionLog(sessionsList[0].sessionId, true, false);
         setTimeout(() => {
             setIsLoading(false);
         }, 11000)
