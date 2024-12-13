@@ -31,7 +31,6 @@ export const useLogin = () => {
     }
 
     const userData = await getUserData(data.email)
-    console.log(userData)
     dispatch(setUserData(userData.user as userState))
   
     window.location.href = '/'
@@ -41,7 +40,7 @@ export const useLogin = () => {
   return { login}
 }
 
-async function getUserData(email: string) {
+export async function getUserData(email: string) {
   const supabase = createClient()
 
   const { data, error } = await supabase.from('MsStaff').select(`

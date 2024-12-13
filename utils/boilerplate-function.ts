@@ -36,3 +36,26 @@ export const fetchFileFromUrl = async (url: string) => {
   const fileName = url.split("/").pop();
   return new File([blob], fileName || "file");
 }    
+
+export const getCookieValue = async (name: string) => {
+  const cookies = document.cookie.split('; ');
+  for (const cookie of cookies) {
+    const [cookieName, cookieValue] = cookie.split('=');
+    if (cookieName === name) {
+      return decodeURIComponent(cookieValue);
+    }
+  }
+  return null
+}
+
+export const decodeJWT = (token: string) => {
+  try {
+    const base64 = token.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (error){
+    console.error(error);
+    return null;
+  }
+}
+
