@@ -248,7 +248,9 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             }
         }))
         setSessionsList(sessionsList);
-        setIsLoading(false);
+        setTimeout(() => {
+            setIsLoading(false);
+        }, 11000)
     }
 
     const fetchSessionStatuses = async () => {
