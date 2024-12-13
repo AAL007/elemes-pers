@@ -248,7 +248,6 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             }
         }))
         setSessionsList(sessionsList);
-        handleSessionLog(sessionsList[0].sessionId, true, false);
         setTimeout(() => {
             setIsLoading(false);
         }, 11000)
@@ -283,10 +282,8 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
 
     useEffect(() => {
         if(sessionId === "") return;
-        if(selected === "content"){
-            handleSessionLog(sessionId, true, false);
-        }else if(selected === "assignment"){
-            handleSessionLog(sessionId, false, true);
+        if(selected === "assignment"){
+            handleSessionLog(sessionId, true, true);
         }
     }, [selected])
 
