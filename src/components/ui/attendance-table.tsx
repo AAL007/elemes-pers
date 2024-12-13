@@ -25,7 +25,7 @@ import { ChevronDownIcon } from "@/components/icon/chevron-down-icon";
 import { SearchIcon } from "@/components/icon/search-icon";
 import { Attendance } from "@/app/(AddMorePageWithinThisFolder)/course/[...parameters]/page";
 import { IconVideo } from "@tabler/icons-react";
-import { createAttendanceLog, fetchAttendanceList } from "@/app/api/course/course-detail-list";
+import { createAttendanceLog } from "@/app/api/course/course-detail-list";
 import { StudentAttendanceLog } from "@/app/api/data-model";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
