@@ -140,7 +140,7 @@ const AttendanceTableComponent = ({
 
     if (hasSearchFilter) {
       filteredAttendance = filteredAttendance.filter((object) =>
-        object?.sessionNumber.toLowerCase().includes(filterValue.toLowerCase()),
+        object?.sessionName.toLowerCase().includes(filterValue.toLowerCase()),
       );
     }
     if (statusFilter !== "all" && Array.from(statusFilter).length !== statusOptions.length) {
