@@ -19,24 +19,14 @@ import {
   Pagination,
   Selection,
   SortDescriptor,
-  useDisclosure,
-  Tooltip,
   Spinner,
   Select,
   SelectItem,
 } from "@nextui-org/react";
-import { EyeIcon } from '@/components/icon/eye-icon';
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/lib/store";
-import { loadUserFromStorage } from "@/lib/user-slice";
-import { SelectList, Score } from "@/app/api/data-model";
-import { Box, Grid } from "@mui/material";
-import { fetchActivePeriod, fetchLecturerClassCourse, fetchAssessment } from "@/app/api/assignment/assignment-management";
 import { fetchStudentsAnswer } from "@/app/api/score/student-result";
 import { ScoreResponse } from "@/app/api/data-model";
-import { ScoreIcon } from "@/components/icon/score-icon";
 
 const columns = [
   {name: "STUDENT NAME", uid: "StudentName", sortable: true},
@@ -51,9 +41,7 @@ function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-const StudentResult = () => {
-  const dispatch = useDispatch();
-  const userData = useSelector((state: RootState) => state.user);
+const StudentResult = ({assessmentId} : {assessmentId: string}) => {
   const [filterValue, setFilterValue] = React.useState("");
   const [selectedKeys, setSelectedKeys] = React.useState<Selection>(new Set([]));
   const [visibleColumns, setVisibleColumns] = React.useState<Selection>(new Set(INITIAL_VISIBLE_COLUMNS));
@@ -64,20 +52,7 @@ const StudentResult = () => {
     direction: "ascending",
   });
   const [isFetchingStudentAnswer, setIsFetchingStudentAnswer] = React.useState(true);
-  const [touched, setTouched] = React.useState(false);
-  const [touched2, setTouched2] = React.useState(false);
-  const [touched3, setTouched3] = React.useState(false);
-  const [academicPeriod, setAcademicPeriod] = React.useState<string>("");
   const [assessmentAnswers, setAssessmentAnswers] = React.useState<ScoreResponse[]>([]);
-  const [classes, setClasses] = React.useState<SelectList[]>([]);
-  const [classId, setClassId] = React.useState<string>("");
-  const [courses, setCourses] = React.useState<SelectList[]>([]);
-  const [courseId, setCourseId] = React.useState<string>("");
-  const [assessments, setAssessments] = React.useState<SelectList[]>([]);
-  const [assessmentId, setAssessmentId] = React.useState<string>("");
-  const isValid = classId !==""
-  const isValid2 = courseId !== ""
-  const isValid3 = assessmentId !== ""
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -94,63 +69,9 @@ const StudentResult = () => {
     return `${formattedDate} ${formattedTime}`;
   };
 
-  useEffect(() => {
-    dispatch(loadUserFromStorage());
-    setIsFetchingStudentAnswer(true);
-    fetchActivePeriod().then((object: any) => {
-        setAcademicPeriod(object.data[0].Key);
-    })
-  }, [dispatch]);
-
-  useEffect(() => {
-    setIsFetchingStudentAnswer(true);
-    fetchLecturerClassCourse(userData.id, academicPeriod).then((object: any) => {
-        const classes = object.data.map((z: any) => {
-          return {
-            key: z.ClassKey,
-            label: z.ClassValue,
-          }
-        })
-        setClasses(classes);
-        setClassId(classes[0]?.key ?? "");
-        const courses = object.data.reduce((acc: any[], z: any) => {
-          const key = z.CourseKey;
-          if (!acc.some(course => course.key === key)) {
-            acc.push({
-              key: z.CourseKey,
-              label: z.CourseValue,
-            });
-          }
-          return acc;
-        }, []);
-        setCourses(courses);
-        setCourseId(courses[0]?.key ?? "");
-      })
-    }, [academicPeriod]);
-
-    const fetchingAssessment = async (courseId: string, classId: string, academicPeriod: string) => {
-        setIsFetchingStudentAnswer(true);
-        fetchAssessment(courseId, classId, academicPeriod).then((object: any) => {
-          const assessments = object.data.map((z: any) => {
-            return {
-                key: z.assessmentId,
-                label: z.assessmentName,
-            }
-          })
-          setAssessments(assessments || []);
-          setAssessmentId(assessments[0]?.key ?? "");
-        })
-    }
-    
-    useEffect(() => {
-        fetchingAssessment(courseId, classId, academicPeriod);
-    }, [classId, courseId])
-
     const fetchingStudentsAnswerScore = async () => {
-      setAssessmentAnswers([]);
-      setIsFetchingStudentAnswer(true);
       fetchStudentsAnswer(assessmentId).then((object: any) => {
-        const assessmentAnswers = object.data.map((z: any) => {
+        const newAssessmentAnswers = object.data.map((z: any) => {
           return {
               StudentId: z.studentId,
               StudentName: z.studentName,
@@ -159,12 +80,14 @@ const StudentResult = () => {
               CreatedDate: z.createdDate,
           }
         })
-        setAssessmentAnswers(assessmentAnswers|| []);
+        setAssessmentAnswers(newAssessmentAnswers|| []);
         setIsFetchingStudentAnswer(false);
       })
     }
 
     useEffect(() => {
+        setIsFetchingStudentAnswer(true);
+        setAssessmentAnswers([]);
         fetchingStudentsAnswerScore();
     }, [assessmentId])
 
@@ -234,21 +157,6 @@ const StudentResult = () => {
             <p className="text-bold text-tiny capitalize text-default-400">{formatDate(assessmentAnswer.CreatedDate)}</p>
           </div>
         );
-      // case "Actions":
-      //   return (
-      //     <div className="relative flex items-center gap-2">
-      //       {/* <Tooltip content="Preview Assignment">
-      //           <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-      //             <EyeIcon onClick={() => {window.open(assessmentAnswer.AnswerUrl, '_blank')}}/>
-      //           </span>
-      //       </Tooltip> */}
-      //       {/* <Tooltip color="warning" content="Score the Assignment">
-      //           <span className="text-lg text-warning-400 cursor-pointer active:opacity-50">
-      //             <ScoreIcon onClick={() => {setScore(assessmentAnswer.Score); setAssessmentAnswer(assessmentAnswer); onOpen()}}/>
-      //           </span>
-      //       </Tooltip> */}
-      //     </div>
-      //   );
       default:
         return cellValue;
     }
@@ -362,76 +270,6 @@ const StudentResult = () => {
 
   return (
     <>
-      <Box component="div">
-        <div>
-            <Grid container className="mt-0.5 mb-10">
-                <Grid item xs={4} sm={4} md={4} lg={4} className="mb-2">
-                    <Select
-                      required
-                      label= "Class"
-                      variant="bordered"
-                      placeholder="Select a class"
-                      errorMessage={isValid || !touched ? "" : "You need to select a class"}
-                      isInvalid={isValid || !touched ? false: true}
-                      className="w-full sm:max-w-[94%]"
-                      selectedKeys={[classId]}
-                      onChange={(e) => setClassId(e.target.value)}
-                      value={classId}
-                      onClose={() => setTouched(true)}
-                    >
-                      {classes.map((classObj) => (
-                        <SelectItem key={classObj.key}>
-                          {classObj.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                </Grid>
-                <Grid item xs={4} sm={4} md={4} lg={4} className="flex justify-end mb-2">
-                  <Select
-                      required
-                      label= "Course"
-                      variant="bordered"
-                      placeholder="Select a course"
-                      errorMessage={isValid2 || !touched2 ? "" : "You need to select a course"}
-                      isInvalid={isValid2 || !touched2 ? false: true}
-                      className="w-full sm:max-w-[94%]"
-                      selectedKeys={[courseId]}
-                      onChange={(e) => setCourseId(e.target.value)}
-                      onClose={() => setTouched2(true)}
-                      value={courseId}
-                    >
-                      {courses.map((course) => (
-                        <SelectItem key={course.key}>
-                          {course.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                </Grid>
-                <Grid item xs={4} sm={4} md={4} lg={4} className="flex justify-end mb-2">
-                    <Select
-                      required
-                      label= "Assignment"
-                      variant="bordered"
-                      placeholder="Select an assignment"
-                      errorMessage={isValid3 || !touched3 ? "" : "You need to select an assignment"}
-                      isInvalid={isValid3 || !touched3 ? false: true}
-                      className="w-full sm:max-w-[94%]"
-                      selectedKeys={[assessmentId]}
-                      onChange={(e) => setAssessmentId(e.target.value)}
-                      value={assessmentId}
-                      onClose={() => setTouched3(true)}
-                    >
-                      {assessments.map((assessment) => (
-                        <SelectItem key={assessment.key}>
-                          {assessment.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                </Grid>
-                
-            </Grid>
-        </div>
-      </Box>
       <Table
         aria-label="Example table with custom cells, pagination and sorting"
         isHeaderSticky

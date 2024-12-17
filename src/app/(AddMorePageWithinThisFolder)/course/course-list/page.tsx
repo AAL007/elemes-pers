@@ -5,7 +5,7 @@ import "@/components/ui/component.css"
 import PageContainer from "@/components/ui/container/page-container";
 import { Box, Grid } from "@mui/material";
 import { Card, CardHeader, CardBody, CardFooter, Progress, Image, Button } from "@nextui-org/react";
-import { fetchCourseList } from "@/app/api/course/course-list";
+import { fetchCourseList, fetchLecturerCourseList } from "@/app/api/course/course-list";
 import { Select, SelectItem } from "@nextui-org/react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
@@ -36,12 +36,12 @@ const courseList = () => {
     const [loading, setLoading] = React.useState(true);
 
     const handleRedirect = (courseId: string, classId: string) => {
-        window.location.href = `/course/${courseId}/${classId}`;
+        window.location.href = userData.role == "Student" ? `/course/${courseId}/${classId}` : `/course/lecturer-course/${courseId}/${classId}`;
     }
 
     const fetchCourseLists = async () => {
         setCourseList([]);
-        const res = await fetchCourseList(userData.id, academicPeriod);
+        const res = userData.role == "Student"  ? await fetchCourseList(userData.id, academicPeriod) : await fetchLecturerCourseList(userData.id, academicPeriod);
         if(!res.success){
             alert(res.message);
             setLoading(false);
@@ -104,9 +104,11 @@ const courseList = () => {
                                     <CardBody className="overflow-visible p-0">
                                         <Image shadow="sm" radius="none" className="w-full object-cover h-[300px]" src={course.courseImage} alt="course-img"/>
                                     </CardBody>
-                                    <div className="relative w-full">
-                                        <Progress size="sm" className="w-full absolute top-0" value={course.progress} />
-                                    </div>
+                                    {userData.role == "Student" && (
+                                        <div className="relative w-full">
+                                            <Progress size="sm" className="w-full absolute top-0" value={course.progress} />
+                                        </div>
+                                    )}
                                     <CardFooter className="flex flex-col px-4 py-4 items-center text-small">
                                         <div className="flex w-full mt-3 justify-start">
                                             <h5 className="font-semibold" style={{ fontSize: '16px' }}>{course.className}</h5>
