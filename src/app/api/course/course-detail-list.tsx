@@ -13,6 +13,22 @@ export async function fetchSessionList(studentId: string, courseId: string, lear
     return {success: true, data: data, message: 'Data fetched successfully!'}
 }
 
+export async function fetchLecturerSessionList(courseId: string){
+    const { data, error } = await supabase.rpc('fetch_lecturer_session_list', {course_id: courseId})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
+export async function fetchStudentAttendances(courseId: string, classId: string, sessionId: string){
+    const { data, error } = await supabase.rpc('fetch_student_attendances', {course_id: courseId, class_id: classId, session_id: sessionId})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
 export async function fetchSessionStatus(studentId: string, courseId: string, learningStyleId: string) {
     const { data, error } = await supabase.rpc('fetch_session_status', {student_id: studentId, course_id: courseId, learning_style_id: learningStyleId})
     if(error){

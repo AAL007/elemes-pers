@@ -43,18 +43,18 @@ const Menuitems = [
     href: "/assignment/assignment-management",
     roles: ["lecturer"],
   },
-  {
-    navlabel: true,
-    subheader: "Scoring",
-    roles: ["lecturer"],
-  },
-  {
-    id: uniqueId(),
-    title: "Student Result",
-    icon: IconScoreboard,
-    href: "/scoring/student-result",
-    roles: ["lecturer"],
-  },
+  // {
+  //   navlabel: true,
+  //   subheader: "Scoring",
+  //   roles: ["lecturer"],
+  // },
+  // {
+  //   id: uniqueId(),
+  //   title: "Student Result",
+  //   icon: IconScoreboard,
+  //   href: "/scoring/student-result",
+  //   roles: ["lecturer"],
+  // },
   {
     navlabel: true,
     subheader: "User Management",
@@ -138,14 +138,14 @@ const Menuitems = [
   {
     navlabel: true,
     subheader: "Course",
-    roles: ["student"],
+    roles: ["student", "lecturer"],
   },
   {
     id: uniqueId(),
     title: "Course List",
     icon: IconCertificate,
     href: "/course/course-list",
-    roles: ["student"],
+    roles: ["student", "lecturer"],
   },
   // {
   //   navlabel: true,
