@@ -21,6 +21,7 @@ import {
     createScore,
 } from "@/app/api/course/course-detail-list";
 import { fetchLearningStyle } from "@/app/api/home/dashboard";
+import { IconDownload } from "@tabler/icons-react";
 import { 
     Tabs, 
     Tab, 
@@ -116,7 +117,6 @@ const defaultDiscussion: ForumPostResponse = {
     CreatorType: '',
     CreatedDate: new Date().toISOString(),
     UpdatedDate: '',
-    File: null,
     NumOfReplies: 0
 }
 
@@ -363,7 +363,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             return;
         }
         const discussions = await Promise.all(res.data.map(async(z: any) => {
-            const file = z.contentUrl != null ? await fetchFileFromUrl(z.contentUrl) : null;
+            // const file = z.contentUrl != null ? await fetchFileFromUrl(z.contentUrl) : null;
             return {
                 ForumId: z.forumId,
                 SessionId: z.sessionId,
@@ -377,7 +377,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 CreatorType: z.creatorType,
                 CreatedDate: z.createdDate,
                 UpdatedDate: z.updatedDate,
-                File: file,
+                // File: file,
                 NumOfReplies: z.numOfReplies
             }
         }))
@@ -385,22 +385,25 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         setIsFetchingDiscussion(false);
     }
 
-    const renderFile = (file: File) => {
-        const fileName = file.name.split('?')[0].split('/').pop();
+    const renderFile = (file: string, menu: string) => {
+        const fileName = file.split('?')[0].split('/').pop();
         const fileExtension = fileName?.split('.').pop()?.toLowerCase();
         switch (true) {
             case fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png' || fileExtension === 'gif':
-                return <img alt={file.name} src={URL.createObjectURL(file)} className="w-full rounded-xl" />;
+                return <img alt={'image'} src={file} className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} />;
             case fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'avi' || fileExtension === 'mov':
-                return <video controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
+                return <video controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg' || fileExtension === 'mpeg':
-                return <audio controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'pdf':
-                return <iframe src={URL.createObjectURL(file)} className="w-full h-full rounded-xl" />;
+                return <audio controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'doc' || fileExtension === 'docx' || fileExtension === 'xls' || fileExtension === 'xlsx' || fileExtension === 'ppt' || fileExtension === 'pptx':
-                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(URL.createObjectURL(file))}`} className="w-full h-full rounded-xl" />;
+                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file)}`} className="w-full h-full rounded-xl" />;
             default:
-                return <a href={URL.createObjectURL(file)} download={file.name}>Download Attachment</a>;
+                return (
+                    <div className="flex flex-row justify-start items-center">
+                        <IconDownload size={20} />
+                        <a href={file} download={'file'}>Download Attachment</a>
+                    </div>
+                );
         }
     }
 
@@ -603,6 +606,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                         </Button>
                         {isCreate ? (
                         <Button color="primary" onPress={async() => {
+                            if(post.ContentTitle == "" || post.Content == ""){alert("Please fill all required input"); return;}
                             setIsLoading(true);
                             try{
                                 let forumId = await generateGUID();
@@ -639,6 +643,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                         </Button>
                         ) : isEdit ? (
                         <Button color="primary" onPress={async () => {
+                            if(post.ContentTitle == "" || post.Content == ""){alert("Please fill all required input"); return;}
                             setIsLoading(true);
                             try {
                                 console.log(files)
@@ -718,7 +723,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                     <Tabs selectedKey={selected} onSelectionChange={(e) => {setSelected(String(e))}} className="flex w-full flex-col" aria-label="Session Detail">
                                                         <Tab key={'content'} title={session.sessionName}>
                                                             <div key={'content'}>
-                                                                {session.file != null ? renderFile(session.file) : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
+                                                                {session.contentUrl != null ? renderFile(session.contentUrl, 'content') : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
                                                                     <>
                                                                         <p className="mb-4 font-semibold text-lg ">
                                                                             {session.sessionNumber == 1 ? 
@@ -773,10 +778,10 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                     </RadioGroup>
                                                                     <div className="mt-8 flex w-full pl-8 justify-end">
                                                                         <div className="mr-3">
-                                                                            <Button variant="bordered" color="primary" onClick={() => {counter > 0 ? setCounter(counter - 1) : null}}>Back</Button>
+                                                                            <Button variant="bordered" color="primary" isDisabled={counter == 0} onClick={() => {setCounter(counter - 1)}}>Back</Button>
                                                                         </div>
                                                                         <div className="">
-                                                                            <Button color="primary" onClick={() => {((counter + 1) < questions.length) ? setCounter(counter + 1) : null}}>Next</Button>
+                                                                            <Button color="primary" isDisabled={(counter + 1) == questions.length} onClick={() => {setCounter(counter + 1)}}>Next</Button>
                                                                         </div>
                                                                     </div>
                                                                     <div className="mt-8 flex w-full pl-8 justify-end">
@@ -821,8 +826,8 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                                 </CardHeader>
                                                                                 <CardBody className="px-3 py-0 text-small text-default-400">
                                                                                     <h2 className="text-lg font-semibold text-gray-400">{item.ContentTitle}</h2>
-                                                                                    <p className={`pt-2 ${item.File != null ? 'pb-2' : ''}`}>{item.Content}</p>
-                                                                                    {item.File != null && (renderFile(item.File))}                                                 
+                                                                                    <p className={`pt-2 ${item.ContentUrl != null ? 'pb-2' : ''}`}>{item.Content}</p>
+                                                                                    {item.ContentUrl != null && (renderFile(item.ContentUrl, 'discussion'))}                                                 
                                                                                     <span className="pt-2">
                                                                                         {formatDateTime(item.UpdatedDate)}
                                                                                     </span>

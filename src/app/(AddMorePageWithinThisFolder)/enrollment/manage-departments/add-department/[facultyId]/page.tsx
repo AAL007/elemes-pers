@@ -467,8 +467,8 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
                       selectionMode="multiple"
                       label= "Courses"
                       variant="bordered"
-                      placeholder="Select user role"
-                      errorMessage={isValid || !touched ? "" : "You need to select a courses"}
+                      placeholder="Select a course"
+                      errorMessage={isValid || !touched ? "" : "You need to select a course"}
                       isInvalid={isValid || !touched ? false: true}
                       className="w-full sm:max-w-[94%]"
                       selectedKeys={course}
