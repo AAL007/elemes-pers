@@ -109,7 +109,7 @@ const Profile = () => {
             href="#"
             color="danger"
             fullWidth
-            onClick={() => {setIsLogout(true); localStorage.removeItem('user'); logout()}}
+            onClick={() => {setIsLogout(true); localStorage.clear(); logout()}}
             isLoading={isLogout}
           >
             Logout

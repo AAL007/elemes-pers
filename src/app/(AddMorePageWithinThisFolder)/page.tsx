@@ -233,10 +233,10 @@ const Dashboard = () => {
             <Grid item xs={12} lg={4}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Students" : "Completed Courses"} />
+                  <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Students" : "Courses"} />
                 </Grid>
                 <Grid item xs={12}>
-                  <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignments" : "Total Attendance Logs"} />
+                  <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignments" : "Total Attendances"} />
                 </Grid>
               </Grid>
             </Grid>

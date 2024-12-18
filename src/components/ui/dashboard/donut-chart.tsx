@@ -92,7 +92,7 @@ const DonutChart: React.FC<DonutChartProps> = ({label, data, numberOfData, title
         {/* column */}
         <Grid item xs={7} sm={7}>
           <Typography variant="h3" mt={3.5} fontWeight="700">
-            {numberOfData} {title.split(' ')[title.split(' ').length - 1]}
+            {numberOfData} {title.split(' ')[title.split(' ').length - 1] == 'Attendances' ? 'Sessions' : title.split(' ')[title.split(' ').length - 1]}
           </Typography>
           {/* <Stack direction="row" spacing={1} mt={1} alignItems="center">
             <Avatar sx={{ bgcolor: successlight, width: 27, height: 27 }}>

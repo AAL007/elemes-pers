@@ -128,6 +128,18 @@ const EditProfile = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if(userData.role == "Administrator" || userData.role == "Lecturer"){
+        if(userEmail == "" || userName == "" || userPhoneNumber == "" || userAddress == "" || gender == ""){
+            alert("Please fill in all required fields")
+            return;
+        }
+        if(!isPhoneNumberValid) {
+            alert("Please enter a valid phone number")
+            return;
+        }
+        if(!isEmailValid){
+            alert("Please enter a valid email")
+            return;
+        }
         if(userEmail != userData.email){
             await updateUserEmail(userEmail)
         }
@@ -331,6 +343,8 @@ const EditProfile = () => {
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
                         placeholder="Enter user name"
+                        errorMessage="Please do not leave this field empty"
+                        isInvalid={userName == "" ? true : false}
                         variant="bordered"
                         onChange={(e) => {setUserName(e.target.value)}}
                         value={userName}
@@ -338,6 +352,7 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
+                        isDisabled={true}
                         autoFocus
                         label="User Email" 
                         className="w-full sm:max-w-[80%]"
@@ -370,7 +385,7 @@ const EditProfile = () => {
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
                         variant='bordered'
-                        granularity='second'
+                        granularity='day'
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
                         showMonthAndYearPickers
@@ -385,6 +400,8 @@ const EditProfile = () => {
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
                         placeholder="Enter user address"
+                        errorMessage="Please do not leave this field empty"
+                        isInvalid={userAddress == "" ? true : false}
                         variant="bordered"
                         onChange={(e) => {setUserAddress(e.target.value)}}
                         value={userAddress}
