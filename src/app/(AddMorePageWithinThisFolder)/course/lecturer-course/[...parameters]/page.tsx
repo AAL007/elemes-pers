@@ -43,6 +43,7 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import StudentResult from "@/components/ui/student-result-table";
 import { IconVideo, IconDoor, IconCalendarTime } from "@tabler/icons-react";
 import StudentAttendanceTable from "@/components/ui/student-attendance-table";
+import { IconDownload } from "@tabler/icons-react";
 
 const defaultDiscussion: ForumPostResponse = {
     ForumId: '',
@@ -57,7 +58,6 @@ const defaultDiscussion: ForumPostResponse = {
     CreatorType: '',
     CreatedDate: new Date().toISOString(),
     UpdatedDate: '',
-    File: null,
     NumOfReplies: 0
 }
 
@@ -167,25 +167,27 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         setIsFetchingDiscussion(false);
     }
 
-    const renderFile = (file: File) => {
-        const fileName = file.name.split('?')[0].split('/').pop();
+    const renderFile = (file: string, menu: string) => {
+        const fileName = file.split('?')[0].split('/').pop();
         const fileExtension = fileName?.split('.').pop()?.toLowerCase();
         switch (true) {
             case fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png' || fileExtension === 'gif':
-                return <img alt={file.name} src={URL.createObjectURL(file)} className="w-full rounded-xl" />;
+                return <img alt={'image'} src={file} className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} />;
             case fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'avi' || fileExtension === 'mov':
-                return <video controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
+                return <video controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg' || fileExtension === 'mpeg':
-                return <audio controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'pdf':
-                return <iframe src={URL.createObjectURL(file)} className="w-full h-full rounded-xl" />;
+                return <audio controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'doc' || fileExtension === 'docx' || fileExtension === 'xls' || fileExtension === 'xlsx' || fileExtension === 'ppt' || fileExtension === 'pptx':
-                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(URL.createObjectURL(file))}`} className="w-full h-full rounded-xl" />;
+                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file)}`} className="w-full h-full rounded-xl" />;
             default:
-                return <a href={URL.createObjectURL(file)} download={file.name}>Download Attachment</a>;
+                return (
+                    <div className="flex flex-row justify-start items-center">
+                        <IconDownload size={20} />
+                        <a href={file} download={'file'}>Download Attachment</a>
+                    </div>
+                );
         }
     }
-
     const posts = React.useMemo(() => {
         const start = (discussionPage - 1) * discussionRowsPerPage;
         const end = start + discussionRowsPerPage;
@@ -449,8 +451,8 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                                 </CardHeader>
                                                                                 <CardBody className="px-3 py-0 text-small text-default-400">
                                                                                     <h2 className="text-lg font-semibold text-gray-400">{item.ContentTitle}</h2>
-                                                                                    <p className={`pt-2 ${item.File != null ? 'pb-2' : ''}`}>{item.Content}</p>
-                                                                                    {item.File != null && (renderFile(item.File))}                                                 
+                                                                                    <p className={`pt-2 ${item.ContentUrl != null ? 'pb-2' : ''}`}>{item.Content}</p>
+                                                                                    {item.ContentUrl != null && (renderFile(item.ContentUrl, 'discussion'))}                                                 
                                                                                     <span className="pt-2">
                                                                                         {formatDateTime(item.UpdatedDate)}
                                                                                     </span>

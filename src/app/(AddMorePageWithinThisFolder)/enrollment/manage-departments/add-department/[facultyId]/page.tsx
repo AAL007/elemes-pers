@@ -27,7 +27,6 @@ import {
   useDisclosure,
   Spinner,
 } from "@nextui-org/react";
-import { PlusIcon } from '@/components/icon/plus-icon';
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
@@ -467,8 +466,8 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
                       selectionMode="multiple"
                       label= "Courses"
                       variant="bordered"
-                      placeholder="Select user role"
-                      errorMessage={isValid || !touched ? "" : "You need to select a courses"}
+                      placeholder="Select a course"
+                      errorMessage={isValid || !touched ? "" : "You need to select a course"}
                       isInvalid={isValid || !touched ? false: true}
                       className="w-full sm:max-w-[94%]"
                       selectedKeys={course}

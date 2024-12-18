@@ -6,10 +6,12 @@ const sasToken = "sv=2022-11-02&ss=bfqt&srt=co&sp=rwdlacupyx&se=2025-02-28T16:07
 const azureStorageUrl = `https://elemesstorage.blob.core.windows.net`
 
 export async function uploadFileToAzureBlobStorage(containerName: string, file: File, folderName: string, fileName: string) {
-    const blobServiceClient = new BlobServiceClient(`${azureStorageUrl}?${sasToken}`)
+    const blobServiceClient = new BlobServiceClient(`${azureStorageUrl}?${sasToken}`);
     let containerClient = blobServiceClient.getContainerClient(containerName);
-    const fileType = file.type.split('/').pop();
-    const newFileName = `${folderName}/${fileName}.${fileType}`;
+    
+    const fileExtension = file.name.split('.').pop();
+    const newFileName = `${folderName}/${fileName}.${fileExtension}`;
+    
     const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
     await blockBlobClient.uploadData(file, {
         blobHTTPHeaders: { blobContentType: file.type }

@@ -95,8 +95,8 @@ const EditProfile = () => {
   const isLearningStyleValid = student.LearningStyleId !== ""
   const isGenderValid = gender!== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
-  const isPhoneNumberValid = userPhoneNumber == "" ? false : userPhoneNumber.match(/^[0-9]+$/) ? false : true
-  const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? false : true
+  const isPhoneNumberValid = userPhoneNumber == "" ? false : userPhoneNumber.match(/^[0-9]+$/) ? true : false
+  const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? true : false
 
   const convertDate = (date: any) => {
     return new Date(
@@ -127,22 +127,25 @@ const EditProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if(userEmail == "" || userName == "" || userPhoneNumber == "" || userAddress == "" || gender == ""){
+        alert("Please fill in all required fields")
+        setLoadingStatus(false)
+        return;
+    }
+    if(!isPhoneNumberValid) {
+        alert("Please enter a valid phone number")
+        setLoadingStatus(false)
+        return;
+    }
+    if(!isEmailValid){
+        alert("Please enter a valid email")
+        setLoadingStatus(false)
+        return;
+    }
+    if(userEmail != userData.email){
+        await updateUserEmail(userEmail)
+    }
     if(userData.role == "Administrator" || userData.role == "Lecturer"){
-        if(userEmail == "" || userName == "" || userPhoneNumber == "" || userAddress == "" || gender == ""){
-            alert("Please fill in all required fields")
-            return;
-        }
-        if(!isPhoneNumberValid) {
-            alert("Please enter a valid phone number")
-            return;
-        }
-        if(!isEmailValid){
-            alert("Please enter a valid email")
-            return;
-        }
-        if(userEmail != userData.email){
-            await updateUserEmail(userEmail)
-        }
         const birthDate = convertDate(userBirthDate)
         let updateStaffData: MsStaff = {
             StaffId: staff?.StaffId,
@@ -339,6 +342,7 @@ const EditProfile = () => {
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
                         autoFocus
+                        isRequired
                         label="User Name"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -354,6 +358,7 @@ const EditProfile = () => {
                     <Input
                         isDisabled={true}
                         autoFocus
+                        isRequired
                         label="User Email" 
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -361,13 +366,14 @@ const EditProfile = () => {
                         variant="bordered"
                         onChange={(e) => {setUserEmail(e.target.value)}}
                         value={userEmail}
-                        isInvalid={isEmailValid}
+                        isInvalid={!isEmailValid}
                         errorMessage="Please enter a valid email"
                     />
                 </Grid>
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
                         autoFocus
+                        isRequired
                         label="User Phone Number"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -375,7 +381,7 @@ const EditProfile = () => {
                         variant="bordered"
                         onChange={(e) => {setUserPhoneNumber(e.target.value)}}
                         value={userPhoneNumber}
-                        isInvalid={isPhoneNumberValid}
+                        isInvalid={!isPhoneNumberValid}
                         errorMessage="Please enter a valid phone number"
                     />
                 </Grid>
@@ -394,7 +400,7 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
-                        required
+                        isRequired
                         autoFocus
                         label="User Address"
                         className="w-full sm:max-w-[80%]"
@@ -409,7 +415,7 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Select
-                      required
+                      isRequired
                       label= "Gender"
                       variant="bordered"
                       placeholder="Select user gender"
@@ -432,7 +438,7 @@ const EditProfile = () => {
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
-                                required
+                                isRequired
                                 label= "Learning Style"
                                 variant="bordered"
                                 placeholder="Select your preferred learning style"

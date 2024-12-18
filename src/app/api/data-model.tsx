@@ -128,7 +128,6 @@ export type ForumPostResponse = ForumPost & {
     CreatorName: string;
     CreatorEmail: string;
     CreatorImage: string;
-    File: File | null;
     NumOfReplies: number;
 }
 
