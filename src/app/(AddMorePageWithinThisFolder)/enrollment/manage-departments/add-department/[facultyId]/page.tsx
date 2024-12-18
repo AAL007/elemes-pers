@@ -27,7 +27,6 @@ import {
   useDisclosure,
   Spinner,
 } from "@nextui-org/react";
-import { PlusIcon } from '@/components/icon/plus-icon';
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
