@@ -194,8 +194,8 @@ const StudentAttendanceTable = ({
         );
       case "status":
         return (
-          <Chip className="capitalize" color={statusColorMap[attendance.status == null ? "notStarted" : attendance.status ? "present" : "absent"]} size="sm" variant="flat">
-            {attendance.status == null ? "not Started" : attendance.status ? "present" : "absent"}
+          <Chip className="capitalize" color={statusColorMap[attendance.status == null ? (new Date(sessionDate) > new Date() ? "not started" : "absent") : "present"]} size="sm" variant="flat">
+            {attendance.status == null ? (new Date(sessionDate) > new Date() ? "not started" : "absent") : "present"}
           </Chip>
         );
       default:

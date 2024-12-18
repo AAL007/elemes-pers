@@ -156,6 +156,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     const [score, setScore] = React.useState<number>(0);
     const [isAssessmentCleared, setIsAssessmentCleared] = React.useState<boolean>(false);
     const [isQuizStarted, setIsQuizStarted] = React.useState<boolean>(false);
+    const [isFetchingQuestionAnswer, setIsFetchingQuestionAnswer] = React.useState<boolean>(true);
 
     const handleFileUpload = (files: File[]) => {
         setFiles(files);
@@ -178,6 +179,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     }
 
     const fetchingExistingQuestionAnswer = async(assessmentId: string) => {
+        setIsFetchingQuestionAnswer(true);
         const res = await fetchQuestionAnswer(assessmentId)
         if(res.success){
             let tempQuestions: question[] = []
@@ -216,6 +218,10 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             setAnswers(answers);
             
             setQuestions(tempQuestions)
+
+            setTimeout(() => {
+                setIsFetchingQuestionAnswer(false);
+            }, 1000)
         }
     }
 
@@ -278,11 +284,14 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             alert(res.message);
             return;
         }
+        fetchSessionStatuses();
     }
 
     useEffect(() => {
         if(sessionId === "") return;
-        if(selected === "assignment"){
+        if(selected === "content"){
+            handleSessionLog(sessionId, true, false);
+        }else if(selected === "assignment"){
             handleSessionLog(sessionId, true, true);
         }
     }, [selected])
@@ -507,9 +516,10 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         if(sessionId === "") return;
         fetchingDiscussions();
         const assessmentId = sessionsList.find(x => x.sessionId == sessionId)?.assessmentId;
-        console.log(assessmentId)
+        // console.log(assessmentId)
         setAssessmentId(assessmentId ?? '');
         fetchIsAssignmentCleared(assessmentId ?? '');
+        setCounter(0)
         fetchingExistingQuestionAnswer(assessmentId ?? '');
     }, [sessionId])
 
@@ -729,6 +739,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                             </div>
                                                         </Tab>
                                                         <Tab key={'assignment'} title={'Assignment'}>
+                                                            {isFetchingQuestionAnswer && <Loading />}
                                                             {(!isAssessmentCleared && !isQuizStarted && questions.length != 0) && (
                                                                 <div className="flex flex-col w-full items-center">
                                                                     <img className="mx-auto justify-center" src={'/img/start-quiz.png'} alt="start-quiz"/>
@@ -761,19 +772,15 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                         ))}
                                                                     </RadioGroup>
                                                                     <div className="mt-8 flex w-full pl-8 justify-end">
-                                                                        {counter > 0 && (
-                                                                            <div className="mr-3">
-                                                                                <Button variant="bordered" color="primary" onClick={() => setCounter(counter - 1)}>Back</Button>
-                                                                            </div>
-                                                                        )}
-                                                                        {(questions.length > 1 && counter+1 != questions.length) && (
-                                                                            <div className="mr-3">
-                                                                                <Button color="primary" onClick={() => {setCounter(counter + 1)}}>Next</Button>
-                                                                            </div>
-                                                                        )}
-                                                                        <div>
-                                                                            {<Button isLoading={isButtonClicked} color="success" onClick={() => {setIsButtonClicked(true); handleSubmitAssessmentAnswer()}}>Submit</Button>}
+                                                                        <div className="mr-3">
+                                                                            <Button variant="bordered" color="primary" onClick={() => {counter > 0 ? setCounter(counter - 1) : null}}>Back</Button>
                                                                         </div>
+                                                                        <div className="">
+                                                                            <Button color="primary" onClick={() => {((counter + 1) < questions.length) ? setCounter(counter + 1) : null}}>Next</Button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="mt-8 flex w-full pl-8 justify-end">
+                                                                        <Button isLoading={isButtonClicked} color="success" onClick={() => {setIsButtonClicked(true); handleSubmitAssessmentAnswer()}}>Submit</Button>
                                                                     </div>
                                                                 </div>
                                                             )}

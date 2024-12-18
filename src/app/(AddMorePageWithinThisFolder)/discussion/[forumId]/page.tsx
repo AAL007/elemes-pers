@@ -103,6 +103,7 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
         setDiscussionDetail(null);
         setIsLoading(true);
         const res = await fetchDiscussion(params.forumId);
+        console.log(res)
         if(!res.success){
             alert(res.message);
             setIsLoading(false);

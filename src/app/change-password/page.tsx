@@ -12,6 +12,7 @@ import { getCookieValue, decodeJWT } from '../../../utils/boilerplate-function'
 import { getUserData } from '../login/action'
 import { useDispatch } from 'react-redux'
 import { setUserData, userState } from '@/lib/user-slice'
+import { Spinner } from '@nextui-org/react'
 // import { NextResponse, type NextRequest } from 'next/server'
 
 export default function ChangePasswordPage() {
@@ -107,9 +108,7 @@ export default function ChangePasswordPage() {
                 type="submit"
               >
                 {isLoading ? (
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
+                  <Spinner size={'sm'} color='primary'/>
                 ) : (
                   "Submit →"
                 )}
