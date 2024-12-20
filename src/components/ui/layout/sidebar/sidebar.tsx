@@ -7,11 +7,6 @@ const Sidebar = () => {
   const { isSidebarOpen, isMobileSidebarOpen, toggleSidebar, toggleMobileSidebar } = useSidebar();
   // const [isCourseListPage, setIsCourseListPage] = useState(false);
   const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
-
-  // useEffect(() => {
-  //   const isCourseListPage = window.location.pathname.includes("course/course-list");
-  //   setIsCourseListPage(isCourseListPage);
-  // }, [lgUp, isCourseListPage]);
   
   const sidebarWidth = "270px";
 
