@@ -61,7 +61,7 @@ import { question } from "../../assignment/create-edit-assignment/[...parameters
 type SessionList = {
     assessmentId: string;
     contentUrl: string;
-    file: File;
+    // file: File;
     sessionId: string;
     sessionName: string;
     sessionNumber: number;
@@ -241,11 +241,11 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             return;
         }
         const sessionsList = await Promise.all(res.data.map(async(z: any) => {
-            const file = (z.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? await fetchFileFromUrl(z.contentUrl) : null;
+            // const file = (z.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? await fetchFileFromUrl(z.contentUrl) : null;
             return {
                 assessmentId: z.assessmentId,
                 contentUrl: z.contentUrl,
-                file: file,
+                // file: file,
                 sessionId: z.sessionId,
                 sessionName: z.sessionName,
                 sessionNumber: z.sessionNumber,
@@ -254,9 +254,10 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             }
         }))
         setSessionsList(sessionsList);
-        setTimeout(() => {
-            setIsLoading(false);
-        }, 11000)
+        setIsLoading(false);
+        // setTimeout(() => {
+            
+        // }, 1000)
     }
 
     const fetchSessionStatuses = async () => {
@@ -502,6 +503,9 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     }, [])
 
     useEffect(() => {
+        if (params.parameters[0] === undefined || params.parameters[1] === undefined || learningStyleId === '') {
+            return;
+        }
         setIsLoading(true);
         // fetchAssignmentLists();
         fetchAttendances();

@@ -12,13 +12,10 @@ import { loadUserFromStorage } from "@/lib/user-slice";
 import { useEffect, useState } from 'react';
 import { fetchAdministratorNotification, fetchLecturerNotification, fetchStudentNotification } from '@/app/api/home/dashboard';
 import { useMediaQuery } from '@mui/material';
+import { useSidebar } from '../sidebar/sidebar-context';
 
-interface ItemType {
-  toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
-}
-
-const Header = ({toggleMobileSidebar}: ItemType) => {
-
+const Header = () => {
+  const { toggleSidebar, toggleMobileSidebar } = useSidebar();
   // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
   // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
   const dispatch = useDispatch();
@@ -27,11 +24,11 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
   // const [isCourseListPage, setIsCourseListPage] = React.useState<boolean>(false);
 
   let display = {
-    lg: 'none',
+    lg: 'inline',
     xs: 'inline',
   }
 
-  // const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
+  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
   
   // useEffect(() => {
   //   const isCourseListPage = window.location.pathname.includes("course/course-list");
@@ -110,7 +107,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
         <IconButton
           color="inherit"
           aria-label="menu"
-          onClick={toggleMobileSidebar}
+          onClick={lgUp ? toggleSidebar : toggleMobileSidebar}
           sx={{
             display,
           }}

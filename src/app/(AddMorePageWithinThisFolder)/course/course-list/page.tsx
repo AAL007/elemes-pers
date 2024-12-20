@@ -77,7 +77,7 @@ const courseList = () => {
                     placeholder="Select Academic Period"
                     errorMessage={(touched && (academicPeriod == "")) ? "Please select academic period" : ""}
                     isInvalid={((academicPeriod == "") && touched) ? true: false}
-                    className="w-1/3 mb-5"
+                    className={`lg:w-1/3 xl:w-1/3 2xl:w-1/3 w-1/2 mb-5`}
                     selectedKeys={[academicPeriod]}
                     onClick={async() => {}}
                     onChange={(e) => {setAcademicPeriod(e.target.value)}}
