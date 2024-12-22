@@ -1,7 +1,7 @@
 'use client'
 import { useLogin } from './action'
 import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
@@ -18,8 +18,23 @@ export default function LoginPage() {
   const[isLoading, setLoadingStatus] = useState(false)
   const[isError, setErrorStatus] = useState(false)
   const[errorMessage, setErrorMessage] = useState('')
+  const[currDisplaySize, setCurrDisplaySize] = useState(0)
 
   const words = ["learn", "grow", "excel"]
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCurrDisplaySize(window.innerWidth)
+    }
+
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -66,14 +81,14 @@ export default function LoginPage() {
         }}
         className="relative flex flex-col gap-4 items-stretch justify-center px-4"
       >
-        <div className="h-[20rem] flex justify-between items-center px-4">
-          <div className="text-4xl mr-20 mx-auto font-normal text-neutral-600 dark:text-neutral-400 leading-normal">
+        <div className={`${currDisplaySize < 768 ? '' : 'h-[20rem] flex justify-between'} items-center px-4`}>
+          <div className={`${currDisplaySize < 768 ? 'justify-center text-center mb-8 w-full' : ''} text-4xl mr-20 mx-auto font-normal text-neutral-600 dark:text-neutral-400 leading-normal`}>
             Let's
             <FlipWords words={words} />
             with Elemes University
           </div>
       
-          <div className='ml-10 mr-10'></div>
+          {currDisplaySize < 768 ? null : (<div className='ml-10 mr-10'></div>)}
           <div className="max-w-md w-full mx-auto rounded md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
             <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
               Welcome to Elemes Academy
