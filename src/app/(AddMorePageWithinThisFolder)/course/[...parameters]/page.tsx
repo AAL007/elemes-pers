@@ -727,7 +727,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                     <Tabs selectedKey={selected} onSelectionChange={(e) => {setSelected(String(e))}} className="flex w-full flex-col" aria-label="Session Detail">
                                                         <Tab key={'content'} title={session.sessionName}>
                                                             <div key={'content'}>
-                                                                {session.contentUrl != null ? renderFile(session.contentUrl, 'content') : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
+                                                                {(session.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? renderFile(session.contentUrl, 'content') : (session.contentUrl != null && learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461') ? (
                                                                     <>
                                                                         <p className="mb-4 font-semibold text-lg ">
                                                                             {session.sessionNumber == 1 ? 
@@ -749,7 +749,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                         </Tab>
                                                         <Tab key={'assignment'} title={'Assignment'}>
                                                             {isFetchingQuestionAnswer && <Loading />}
-                                                            {(!isAssessmentCleared && !isQuizStarted && questions.length != 0) && (
+                                                            {(!isFetchingQuestionAnswer && !isAssessmentCleared && !isQuizStarted && questions.length != 0) && (
                                                                 <div className="flex flex-col w-full items-center">
                                                                     <img className="mx-auto justify-center" src={'/img/start-quiz.png'} alt="start-quiz"/>
                                                                     <div className="flex justify-end">
@@ -757,19 +757,19 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                     </div>
                                                                 </div>
                                                             )}
-                                                            {(isAssessmentCleared && !isQuizStarted) && (
+                                                            {(!isFetchingQuestionAnswer && isAssessmentCleared && !isQuizStarted) && (
                                                                 <div className="flex flex-col justify-center mb-3 items-center w-full">
                                                                     <img src={'/img/trophy.png'} alt="trophy"/>
                                                                     <h2 className="font-extrabold text-4xl">{score}</h2>
                                                                     <h2 className="font-medium text-lg mt-2">Your total score</h2>
                                                                 </div>
                                                             )}
-                                                            {(questions.length == 0) && (
+                                                            {(!isFetchingQuestionAnswer && questions.length == 0) && (
                                                                 <div className="flex w-full justify-center items-center">
                                                                     No questions available
                                                                 </div>
                                                             )}
-                                                            {(questions.length != 0 && isQuizStarted) && (
+                                                            {(!isFetchingQuestionAnswer && questions.length != 0 && isQuizStarted) && (
                                                                 <div className="px-2 py-2">
                                                                     <div className="flex justify-between mt-4 items-center">
                                                                         <h2 className="text-lg font-bold mr-5">{counter + 1}. {questions[counter].question}</h2>
