@@ -62,6 +62,10 @@ const statusColorMap: Record<string, ChipProps["color"]>  = {
   inactive: "danger",
 };
 
+const audioExtension = ['mp3', 'wav', 'mpeg', 'ogg']
+
+const visualExtension = ['mp4', 'avi', 'webm', 'mov', 'jpg', 'jpeg', 'png', 'gif']
+
 const columns = [
   {name: "SESSION NAME", uid: "SessionName", sortable: true},
   {name: "SESSION NUMBER", uid: "SessionNumber", sortable: true},
@@ -623,6 +627,15 @@ const ManageCourseDetail = () => {
                         if(contentLearningStyles[i].LearningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461'){
                           const contentFile = contentLearningStyles[i].Content;
                           if(contentFile instanceof File){
+                            const fileName = contentFile.name
+                            const fileExtension = fileName.split(".").pop()?.toLowerCase()
+                            if(contentLearningStyles[i].LearningStyleId == '1980c978-3f99-4c72-bac2-7ef1491c24a1' && (!fileExtension || !audioExtension.includes(fileExtension))){
+                              alert("Please upload audio file for audio learning style category")
+                              return;
+                            }else if(contentLearningStyles[i].LearningStyleId == '98ef05c8-121a-4821-a54b-9d3ac92f7292' && (!fileExtension || !visualExtension.includes(fileExtension))){
+                              alert("Please upload visual file for visual learning style category")
+                              return;
+                            }
                             blobUrl = await uploadFileToAzureBlobStorage("course-content", contentFile, courseLabel, `${sessionId}/${contentLearningStyles[i].LearningStyleId}`);
                           }
                         }else{

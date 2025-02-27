@@ -31,7 +31,6 @@ import {
   Spinner,
   Select,
   SelectItem,
-  DatePicker
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
@@ -39,16 +38,12 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
 import { fetchActivePeriod, fetchLecturerClassCourse, updateAssessment, createAssessment, deleteAssessment, fetchAssessment, fetchTotalSession } from "@/app/api/assignment/assignment-management";
-import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
-import { generateGUID, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../utils/boilerplate-function";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { MsAssessment, SelectList } from "@/app/api/data-model";
 import { Box, Grid } from "@mui/material";
-import { FileUpload } from "@/components/ui/file-upload";
-import { EyeIcon } from "@/components/icon/eye-icon";
-import { parseAbsoluteToLocal } from "@internationalized/date";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
