@@ -28,9 +28,6 @@ const SidebarItems = ({ toggleMobileSidebar }: any) => {
             if(item.roles?.includes(userData.role.toLowerCase())){
               return <NavGroup item={item} key={item.subheader} />;
             }
-            
-            // {/********If Sub Menu**********/}
-            /* eslint no-else-return: "off" */
           } else {
             if(item.roles?.includes(userData.role.toLowerCase())){
               return (

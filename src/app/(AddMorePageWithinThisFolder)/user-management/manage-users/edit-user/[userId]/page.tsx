@@ -87,7 +87,9 @@ const EditRole = ({params} : {params : {userId: string}}) => {
 
   const isCourseValid = courses.size !== 0
   const isStudyProgramValid = student.DepartmentId !== ""
-
+  const staffRoleCategoryId = process.env.NEXT_PUBLIC_ROLE_CATEGORY_STAFF_ID || "";
+  const studentRoleId = process.env.NEXT_PUBLIC_STUDENT_ROLE_ID || "";
+  const lecturerRoleId = process.env.NEXT_PUBLIC_LECTURER_ROLE_ID || "";
   const isGenderValid = gender!== ""
   const isRoleValid = userRole !== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
@@ -129,7 +131,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
         }
         updateStaff(updateStaffData).then(async(res) => {
             if(res.statusCode == 200){
-                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(userRole == lecturerRoleId){
                     const coursesArray = Array.from(courses).filter(item => item !== "")
                     const addedCourse = coursesArray.filter(item => !initialLecturerCourse.includes(item))
                     const removedCourse = initialLecturerCourse.filter(item => !coursesArray.includes(item))
@@ -247,7 +249,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
             setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
             setIsStaff(true)
             setStaff(res.data)
-            if(res.data.RoleId == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+            if(res.data.RoleId == lecturerRoleId){
                 fetchLecturerCoursesByStaffId(params.userId).then((res3) => {
                     if(res3.statusCode != 200){
                         alert(res3.message)
@@ -395,7 +397,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                       ))}
                     </Select>
                 </Grid>
-                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                {(userRole == studentRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
@@ -420,7 +422,7 @@ const EditRole = ({params} : {params : {userId: string}}) => {
                         </Grid>
                     </>
                 )}
-                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                {(userRole == lecturerRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select

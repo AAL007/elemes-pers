@@ -6,7 +6,6 @@ import {
   Avatar,
   Box,
   Menu,
-  IconButton,
   MenuItem,
   ListItemIcon,
   ListItemText,
@@ -16,10 +15,8 @@ import { Button } from "@nextui-org/react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/lib/store";
 import "@/components/ui/component.css"
-
-import { IconListCheck, IconMail, IconUser } from "@tabler/icons-react";
+import { IconUser } from "@tabler/icons-react";
 import { loadUserFromStorage } from "@/lib/user-slice";
-import { color } from "framer-motion";
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -69,9 +66,6 @@ const Profile = () => {
           <h5 className="profile-name" style={{ color: "black", fontSize: "12px", fontWeight: "400" }}>{userData.role}</h5>
         </div>
       </Button>
-      {/* ------------------------------------------- */}
-      {/* Message Dropdown */}
-      {/* ------------------------------------------- */}
       <Menu
         id="msgs-menu"
         anchorEl={anchorEl2}
@@ -92,18 +86,6 @@ const Profile = () => {
           </ListItemIcon>
           <ListItemText><Link href={'/edit-profile'}>My Profile</Link></ListItemText>
         </MenuItem>
-        {/* <MenuItem>
-          <ListItemIcon>
-            <IconMail width={20} />
-          </ListItemIcon>
-          <ListItemText>My Account</ListItemText>
-        </MenuItem> */}
-        {/* <MenuItem>
-          <ListItemIcon>
-            <IconListCheck width={20} />
-          </ListItemIcon>
-          <ListItemText>My Tasks</ListItemText>
-        </MenuItem> */}
         <Box component="div" mt={1} py={1} px={2}>
           <Button
             href="#"

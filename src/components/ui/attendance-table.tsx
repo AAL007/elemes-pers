@@ -371,12 +371,9 @@ const AttendanceTableComponent = ({
             classNames={{
                 wrapper: "max-h-[382px]",
             }}
-            // selectedKeys={[selectedKey]}
-            // selectionMode="single"
             sortDescriptor={sortDescriptor}
             topContent={topContent}
             topContentPlacement="outside"
-            // onSelectionChange={setSelectedKey}
             onSortChange={
                 setSortDescriptor
             }

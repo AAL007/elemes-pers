@@ -35,7 +35,7 @@ import { useEffect, useState } from "react";
 import { Input } from '@nextui-org/react';
 import { fetchCourses, fetchDepartmentCourses, createDepartment, createDepartmentCourse, deleteDepartmentCourse } from '@/app/api/enrollment/manage-departments';
 import { Button, Select, SelectItem} from "@nextui-org/react";
-import { generateGUID } from "../../../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../../../utils/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -215,21 +215,18 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
       case "CourseId":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{courseDropdownList.find(x => x.key == department.CourseId)?.label}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{department.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{department.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -242,11 +239,6 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
       case "Actions":
         return (
           <div className="relative flex items-center gap-2">
-            {/* <Tooltip content="Edit Department">
-              <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                <EditIcon onClick={() => {handleEditClick(department.DepartmentId)}} />
-              </span>
-            </Tooltip> */}
             <Tooltip color="danger" content="Delete Department">
               <span className="text-lg text-danger cursor-pointer active:opacity-50">
                 <DeleteIcon onClick={() => {setCourseId(department.CourseId); onOpen()}}/>
@@ -368,9 +360,6 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact
@@ -481,8 +470,6 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
                       ))}
                     </Select>
                 </Grid>
-                {/* <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
-                </Grid> */}
                 <Grid item xs={9} sm={9} md={9} lg={9} className="mt-4">
                 </Grid>
                 <Grid item xs={3} sm={3} md={3} lg={3} className="mt-4 flex justify-end">
@@ -502,12 +489,10 @@ const AddDepartment = ({params} : {params : {facultyId: string}}) => {
                       classNames={{
                         wrapper: "max-h-[382px]",
                       }}
-                      // selectedKeys={selectedKeys}
                       selectionMode="single"
                       sortDescriptor={sortDescriptor}
                       topContent={topContent}
                       topContentPlacement="outside"
-                      // onSelectionChange={setSelectedKeys}
                       onSortChange={
                         setSortDescriptor
                       }

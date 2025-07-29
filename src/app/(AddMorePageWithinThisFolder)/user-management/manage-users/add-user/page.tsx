@@ -9,12 +9,12 @@ import { createStaff, createStudent, fetchDepartments, createLecturerCourse } fr
 import { fetchCourses } from "@/app/api/enrollment/manage-courses";
 import { Button, DatePicker, Select, SelectItem} from "@nextui-org/react";
 import { fetchRoles } from "@/app/api/user-management/manage-roles";;
-import { generateGUID } from "../../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../../utils/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
 import { MsRole, MsStaff, MsStudent, SelectList, LecturerCourse } from "@/app/api/data-model";
-import { DateValue, now, parseAbsoluteToLocal } from "@internationalized/date";
+import { parseAbsoluteToLocal } from "@internationalized/date";
 // components
 
 const AddRole = () => {
@@ -39,7 +39,9 @@ const AddRole = () => {
     { key: "M", label: "Male" },
     { key: "F", label: "Female" }
   ]);
-
+  const staffRoleCategoryId = process.env.NEXT_PUBLIC_ROLE_CATEGORY_STAFF_ID || "";
+  const studentRoleId = process.env.NEXT_PUBLIC_STUDENT_ROLE_ID || "";
+  const lecturerRoleId = process.env.NEXT_PUBLIC_LECTURER_ROLE_ID || "";
   const isGenderValid = gender!== ""
   const isRoleValid = userRole !== ""
   const isCourseValid = courses.size !== 0
@@ -65,7 +67,7 @@ const AddRole = () => {
     e.preventDefault();
     let selectedRoleCategoryId = roles.find((role) => role.RoleId == userRole)?.RoleCategoryId
     const birthDate = convertDate(userBirthDate);
-    if(selectedRoleCategoryId == "22e35ce5-3407-4b11-af22-acb995548a0d"){
+    if(selectedRoleCategoryId == staffRoleCategoryId){
         let staff: MsStaff = {
             StaffId: generateGUID(),
             StaffName: userName,
@@ -85,7 +87,7 @@ const AddRole = () => {
 
         createStaff(staff).then((res) => {
             if(res.statusCode == 200){
-                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(userRole == lecturerRoleId){
                     const coursesArray = Array.from(courses).filter(item => item !== "")
                     for(let i = 0; i < coursesArray.length; i++){
                         let lecturerCourse: LecturerCourse = {
@@ -297,7 +299,7 @@ const AddRole = () => {
                       ))}
                     </Select>
                 </Grid>
-                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                {(userRole == studentRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
@@ -322,7 +324,7 @@ const AddRole = () => {
                         </Grid>
                     </>
                 )}
-                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                {(userRole == lecturerRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select

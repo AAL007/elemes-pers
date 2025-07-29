@@ -38,7 +38,7 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
 import { fetchActivePeriod, fetchLecturerClassCourse, updateAssessment, createAssessment, deleteAssessment, fetchAssessment, fetchTotalSession } from "@/app/api/assignment/assignment-management";
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../utils/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -270,21 +270,18 @@ const AssignmentManagement = () => {
       case "AssessmentName":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{assessmentObj.AssessmentName}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{assessmentObj.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{assessmentObj.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -427,9 +424,6 @@ const AssignmentManagement = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact
@@ -546,11 +540,6 @@ const AssignmentManagement = () => {
                         }
                       })
                       window.location.href = `/assignment/create-edit-assignment/create/${assessmentId}`;
-                      // onClose();
-                      // setIsCreate(false);
-                      // setUploadClicked(false);
-                      // setAssessment(defaultAssessment);
-                      // fetchingAssessment(courseId, classId, academicPeriod);
                       setErrorMessage("");
                     }catch(e){
                       alert(e);
@@ -579,12 +568,6 @@ const AssignmentManagement = () => {
                       await updateAssessment(updatedAssessment).then((object: any) => {
                         if(object.success) {
                           window.location.href = `/assignment/create-edit-assignment/edit/${updatedAssessment.AssessmentId}`
-                          // onClose();
-                          // setIsEdit(false);
-                          // setUploadClicked(false);
-                          // setAssessment(defaultAssessment);
-                          // fetchingAssessment(courseId, classId, academicPeriod);
-                          // setErrorMessage("");
                         }else{
                           setErrorMessage(object.message);
                         }
@@ -599,7 +582,6 @@ const AssignmentManagement = () => {
                   <Button color="primary" onPress={async() => {
                     setIsLoading(true);
                     try{
-                      // let res = await deleteFileInAzureBlobStorageByUrl("assessment", courseLabel, assessment.AssessmentId);
                       await deleteAssessment(assessment.AssessmentId).then((object: any) => {
                         console.log(assessment.AssessmentId)
                         if(object.success){
@@ -682,12 +664,10 @@ const AssignmentManagement = () => {
         classNames={{
           wrapper: "max-h-[382px]",
         }}
-        // selectedKeys={selectedKeys}
         selectionMode="single"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        // onSelectionChange={setSelectedKeys}
         onSortChange={
           setSortDescriptor
         }

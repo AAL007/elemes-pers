@@ -9,13 +9,10 @@ import {
   IconBooks,
   IconMicroscope,
   IconClipboard,
-  IconScoreboard,
   IconCalendarTime
 } from "@tabler/icons-react";
 
 import { uniqueId } from "lodash";
-
-//buat rolesnya masukkin dalam array dan dalam huruf kecil
 
 const Menuitems = [
   {
@@ -43,18 +40,6 @@ const Menuitems = [
     href: "/assignment/assignment-management",
     roles: ["lecturer"],
   },
-  // {
-  //   navlabel: true,
-  //   subheader: "Scoring",
-  //   roles: ["lecturer"],
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Student Result",
-  //   icon: IconScoreboard,
-  //   href: "/scoring/student-result",
-  //   roles: ["lecturer"],
-  // },
   {
     navlabel: true,
     subheader: "User Management",
@@ -121,13 +106,6 @@ const Menuitems = [
     href: "/enrollment/manage-classes",
     roles: ["administrator"],
   },
-  // {
-  //   id: uniqueId(),
-  //   title: "Pair Courses",
-  //   icon: IconAffiliate,
-  //   href: "/enrollment/pair-courses",
-  //   roles: ["admin"],
-  // },
   {
     id: uniqueId(),
     title: "Manage Students",
@@ -147,34 +125,6 @@ const Menuitems = [
     href: "/course/course-list",
     roles: ["student", "lecturer"],
   },
-  // {
-  //   navlabel: true,
-  //   subheader: "Assignment",
-  //   roles: ["student"],
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Assignment List",
-  //   icon: IconClipboard,
-  //   href: "/assignment/assignment-list",
-  //   roles: ["student"],
-  // },
-  // {
-  //   navlabel: true,
-  //   subheader: "Extra",
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Icons",
-  //   icon: IconMoodHappy,
-  //   href: "/icons",
-  // },
-  // {
-  //   id: uniqueId(),
-  //   title: "Sample Page",
-  //   icon: IconAperture,
-  //   href: "/sample-page",
-  // },
 ];
 
 export default Menuitems;

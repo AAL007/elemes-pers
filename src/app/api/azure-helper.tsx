@@ -1,7 +1,6 @@
-'use client'
+'use server'
 
 const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob')
-const azureStorageName = process.env.ACCOUNT_NAME
 const sasToken = process.env.SAS_TOKEN
 const azureStorageUrl = process.env.AZURE_STORAGE_URL
 

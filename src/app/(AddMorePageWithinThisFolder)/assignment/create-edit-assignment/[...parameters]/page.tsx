@@ -13,7 +13,7 @@ import { PlusIcon } from "@/components/icon/plus-icon"
 import { IconTrash, IconX, IconReload } from "@tabler/icons-react"
 import { fetchAssessmentById, createOption, createQuestion, updateOption, updateQuestion, fetchQuestionAnswer } from "@/app/api/assignment/create-edit-assignment"
 import { MsAssessment, MsOption, MsQuestion } from "@/app/api/data-model"
-import { generateGUID } from "../../../../../../utils/boilerplate-function"
+import { generateGUID } from "../../../../../../utils/utils"
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper"
