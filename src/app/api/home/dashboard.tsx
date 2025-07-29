@@ -4,11 +4,6 @@ import { createClient } from "../../../../utils/supabase/server";
 
 const supabase = createClient()
 
-const formatDate = (date: Date) => {
-    const pad = (num: number) => num.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
 // Administrator
 export async function fetchAdministratorNotification(){
     const res = await supabase.rpc('fetch_administrator_notification')

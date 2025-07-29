@@ -23,7 +23,7 @@ import {
 } from "@nextui-org/react";
 import { fetchDiscussion, createThread, updateThread, deleteThread, fetchThreads } from "@/app/api/course/course-detail-list";
 import { ForumThread, ForumThreadResponse, ForumPostResponse } from "@/app/api/data-model";
-import { fetchFileFromUrl, formatDateTime, generateGUID } from "../../../../../utils/boilerplate-function";
+import { fetchFileFromUrl, formatDateTime, generateGUID } from "../../../../../utils/utils";
 import { FileUpload } from "@/components/ui/file-upload";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { useSelector } from "react-redux";

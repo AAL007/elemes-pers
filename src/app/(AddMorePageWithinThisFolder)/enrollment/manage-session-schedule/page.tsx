@@ -38,7 +38,6 @@ import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import { SearchIcon } from "@/components/icon/search-icon";
 import { ChevronDownIcon } from "@/components/icon/chevron-down-icon";
-import { EyeIcon } from "@/components/icon/eye-icon";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -308,49 +307,42 @@ const ManageSessionSchedule = () => {
       case "SessionName":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{session.SessionName}</p>
           </div>
         );
       case "SessionNumber":
           return (
               <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{session.SessionNumber}</p>
               </div>
           );
       case "SessionDate":
         return (
           <div className="flex flex-col">
-          {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
           <p className="text-bold text-tiny capitalize text-default-400">{session.SessionDate}</p>
           </div>
         );
         case "Classroom":
           return (
             <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{session.Classroom}</p>
             </div>
           );
           case "OnlineMeetingUrl":
         return (
           <div className="flex flex-col">
-          {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
           <p className="text-bold text-tiny capitalize text-default-400">{session.OnlineMeetingUrl ?? "N/A"}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{session.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{session.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -492,9 +484,6 @@ const ManageSessionSchedule = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact

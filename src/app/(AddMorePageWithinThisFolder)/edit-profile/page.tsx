@@ -23,7 +23,6 @@ import { fetchCourses } from '@/app/api/enrollment/manage-courses';
 import { updateUserEmail } from '@/app/api/edit-profile/edit-profile';
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage } from '@/app/api/azure-helper';
 import { fetchLearningStyle } from '@/app/api/enrollment/manage-course-detail';
-import { set } from 'lodash';
 
 // components
 
@@ -91,7 +90,8 @@ const EditProfile = () => {
     { key: "M", label: "Male" },
     { key: "F", label: "Female" }
   ]);
-
+  const lecturerRoleId = process.env.NEXT_PUBLIC_LECTURER_ROLE_ID || "";
+  const studentRoleId = process.env.NEXT_PUBLIC_STUDENT_ROLE_ID || "";
   const isLearningStyleValid = student.LearningStyleId !== ""
   const isGenderValid = gender!== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
@@ -165,7 +165,7 @@ const EditProfile = () => {
         }
         await updateStaff(updateStaffData).then(async(res) => {
             if(res.statusCode == 200){
-                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(userRole == lecturerRoleId){
                     const coursesArray = Array.from(courses).filter(item => item !== "")
                     const addedCourse = coursesArray.filter(item => !initialLecturerCourse.includes(item))
                     const removedCourse = initialLecturerCourse.filter(item => !coursesArray.includes(item))
@@ -261,7 +261,7 @@ const EditProfile = () => {
                 setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
                 setStaff(res.data)
                 setProfilePictureUrl(res.data.ProfilePictureUrl)
-                if(res.data.RoleId == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(res.data.RoleId == lecturerRoleId){
                     fetchLecturerCoursesByStaffId(userData.id).then((res3) => {
                         if(res3.statusCode != 200){
                             alert(res3.message)
@@ -434,7 +434,7 @@ const EditProfile = () => {
                       ))}
                     </Select>
                 </Grid>
-                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                {(userRole == studentRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
@@ -468,7 +468,7 @@ const EditProfile = () => {
                         </Grid>
                     </>
                 )}
-                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                {(userRole == lecturerRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select

@@ -35,7 +35,7 @@ import {
 } from "@nextui-org/react";
 import Loading from "@/app/(AddMorePageWithinThisFolder)/loading";
 import { ForumPost, ForumPostResponse } from "@/app/api/data-model";
-import { generateGUID, formatDateTime, fetchFileFromUrl } from "../../../../../../utils/boilerplate-function";
+import { generateGUID, formatDateTime, fetchFileFromUrl } from "../../../../../../utils/utils";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { FileUpload } from "@/components/ui/file-upload";
 import { EditIcon } from "@/components/icon/edit-icon";

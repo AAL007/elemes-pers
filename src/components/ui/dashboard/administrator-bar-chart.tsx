@@ -4,7 +4,6 @@ import { useTheme } from '@mui/material/styles';
 import DashboardCard from './dashboard-card';
 import dynamic from "next/dynamic";
 import { fetchStudentsEnrolled } from '@/app/api/home/dashboard';
-import { dropdown } from '@nextui-org/react';
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
 
 interface BarChartProps {
@@ -12,7 +11,6 @@ interface BarChartProps {
 }
 
 const AdministratorBarChart : React.FC<BarChartProps> = ({title}) => {
-    // select
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonth = currentDate.getMonth();
@@ -171,10 +169,6 @@ const AdministratorBarChart : React.FC<BarChartProps> = ({title}) => {
             name: title,
             data: totalEnrolledStudents,
         },
-        // {
-        //     name: 'Expense this month',
-        //     data: [280, 250, 325, 215, 250, 310, 280, 250],
-        // },
     ];
 
     return (

@@ -2,19 +2,16 @@
 import { Grid, Box } from '@mui/material';
 import PageContainer from '@/components/ui/container/page-container';
 // components
-import BarChart from '@/components/ui/dashboard/administrator-bar-chart';
 import DonutChart from '@/components/ui/dashboard/donut-chart';
 import RecentActivities from '@/components/ui/dashboard/recent-activities';
 import AdministratorToDoList from '@/components/ui/dashboard/administrator-to-do-list';
 import LecturerToDoList from '@/components/ui/dashboard/lecturer-to-do-list';
-// import AreaChart from '@/components/ui/dashboard/area-chart';
 import React, { useEffect, useState } from 'react';
 import { 
   fetchTotalActiveUser, 
   fetchTotalActiveClass, 
   fetchCompletedCourse,
   fetchAttendanceStatus,
-  fetchStudentsEnrolled, 
   fetchStudentRecentActivity,
   fetchAdministratorRecentActivities, 
   fetchActiveClassStudents, 

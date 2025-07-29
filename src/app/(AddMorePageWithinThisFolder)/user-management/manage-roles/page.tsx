@@ -38,7 +38,7 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
 import { fetchRoles, deleteRole, createRole, updateRole, fetchRoleCategories } from '../../../api/user-management/manage-roles';
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../utils/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -179,21 +179,18 @@ const ManageRoles = () => {
       case "RoleName":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{role.RoleName}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{role.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{role.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -335,9 +332,6 @@ const ManageRoles = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact
@@ -530,12 +524,10 @@ const ManageRoles = () => {
         classNames={{
           wrapper: "max-h-[382px]",
         }}
-        // selectedKeys={selectedKeys}
         selectionMode="single"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        // onSelectionChange={setSelectedKeys}
         onSortChange={
           setSortDescriptor
         }

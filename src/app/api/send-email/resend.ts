@@ -1,16 +1,17 @@
 'use server'
 import { EmailTemplate } from '../../../components/etc/email-template';
 import { Resend } from 'resend';
-import { NextResponse } from 'next/server';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
+const senderEmail = process.env.SENDER_EMAIL || ''
+const subject = 'Welcome Aboard!';
 
 export async function sendEmailNotification(emailAddress: string, password: string) {
   try {
     const { data, error } = await resend.emails.send({
-      from: 'noreply@elemes.site',
+      from: senderEmail,
       to: [emailAddress],
-      subject: 'Welcome Aboard!',
+      subject: subject,
       react: EmailTemplate({ email: emailAddress, password}),
       text: '',
     });
@@ -19,10 +20,7 @@ export async function sendEmailNotification(emailAddress: string, password: stri
     if (error) {
       return {success: false, error};
     }
-
-    // console.log(data);
     return {success: true, data};
-    // return Response.json(data);
   } catch (error) {
     return {success: false, error};
   }

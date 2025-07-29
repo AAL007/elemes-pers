@@ -1,6 +1,6 @@
-'use client'
+'use server'
 
-import { createClient } from "../../../../utils/supabase/client"
+import { createClient } from "../../../../utils/supabase/server"
 import { MsRole } from "../../api/data-model"
 
 const supabase = createClient()
@@ -136,13 +136,3 @@ export async function fetchRoleCategories() {
     }
     return object
 }
-
-// export async function fetchRole(roleId: string) {
-//     const { data, error } = await supabase.from('MsRole').select().eq('RoleId', roleId).single()
-//     if (error){
-//         console.log('error', error);
-//         return {data, statusCode: 400, message: 'Failed'};
-//     }
-
-//     return {data, statusCode: 200, message: 'Success'};
-// }
