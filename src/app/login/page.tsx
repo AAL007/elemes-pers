@@ -1,23 +1,40 @@
 'use client'
-import { login } from './action'
+import { useLogin } from './action'
 import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { cn } from '../../../utils/aceternity/cn'
 import { FlipWords } from '@/components/ui/flip-words'
 import { PasswordInput } from '@/components/ui/password-input'
+import { Spinner } from '@nextui-org/react'
 import Link from 'next/link'
 
 export default function LoginPage() {
+  const { login } = useLogin()
   const[email, setEmail] = useState('')
   const[password, setPassword] = useState('')
   const[isLoading, setLoadingStatus] = useState(false)
   const[isError, setErrorStatus] = useState(false)
   const[errorMessage, setErrorMessage] = useState('')
+  const[currDisplaySize, setCurrDisplaySize] = useState(0)
 
   const words = ["learn", "grow", "excel"]
+
+  useEffect(() => {
+    const handleResize = () => {
+      setCurrDisplaySize(window.innerWidth)
+    }
+
+    handleResize()
+
+    window.addEventListener('resize', handleResize)
+
+    return () => {
+      window.removeEventListener('resize', handleResize)
+    }
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -32,6 +49,7 @@ export default function LoginPage() {
         if(res.statusCode != 200 && res.isError == true){
           setErrorMessage(res.message)
           setErrorStatus(true)
+          setLoadingStatus(false)
         }else{
           setErrorMessage('')
           setErrorStatus(false)
@@ -42,12 +60,12 @@ export default function LoginPage() {
       })
     }catch(e){
       console.log(e)
+      setLoadingStatus(false)
       // if(e instanceof Error){
       //   setErrorStatus(true)
       //   setErrorMessage(e.message)
       // }
     }
-    setLoadingStatus(false)
   };
 
 
@@ -63,14 +81,14 @@ export default function LoginPage() {
         }}
         className="relative flex flex-col gap-4 items-stretch justify-center px-4"
       >
-        <div className="h-[20rem] flex justify-between items-center px-4">
-          <div className="text-4xl mr-20 mx-auto font-normal text-neutral-600 dark:text-neutral-400 leading-normal">
+        <div className={`${currDisplaySize < 768 ? '' : 'h-[20rem] flex justify-between'} items-center px-4`}>
+          <div className={`${currDisplaySize < 768 ? 'justify-center text-center mb-8 w-full' : ''} text-4xl mr-20 mx-auto font-normal text-neutral-600 dark:text-neutral-400 leading-normal`}>
             Let's
             <FlipWords words={words} />
             with Elemes University
           </div>
       
-          <div className='ml-10 mr-10'></div>
+          {currDisplaySize < 768 ? null : (<div className='ml-10 mr-10'></div>)}
           <div className="max-w-md w-full mx-auto rounded md:rounded-2xl p-4 md:p-8 shadow-input bg-white dark:bg-black">
             <h2 className="font-bold text-xl text-neutral-800 dark:text-neutral-200">
               Welcome to Elemes Academy
@@ -84,7 +102,7 @@ export default function LoginPage() {
 
               <LabelInputContainer className="mb-4">
                 <Label htmlFor="password">Password</Label>
-                <PasswordInput id="password" name="password" placeholder="eleme5ddmmyyyy" required onChange={(e: any) => setPassword(e.target.value)}/>
+                <PasswordInput id="password" name="password" placeholder="el3mesdd/mm/yyyy" required onChange={(e: any) => setPassword(e.target.value)}/>
                 {isError ? <span style={{ fontSize: '11px', color: 'red' }}>{errorMessage}</span> : null}
               </LabelInputContainer>
       
@@ -94,9 +112,7 @@ export default function LoginPage() {
                 disabled={isLoading}
               >
                 {isLoading ? (
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
+                  <Spinner size={'sm'} color='primary'/>
                 ) : (
                   "Log In →"
                 )}

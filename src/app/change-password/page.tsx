@@ -1,6 +1,6 @@
 'use client'
 import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Label } from '@/components/ui/label'
 import { cn } from '../../../utils/aceternity/cn'
@@ -8,6 +8,11 @@ import { PasswordInput } from '@/components/ui/password-input'
 // import { changePassword, validateSession } from './action'
 // import { instance } from 'three/examples/jsm/nodes/Nodes.js'
 import { createClient } from '../../../utils/supabase/client'
+import { getCookieValue, decodeJWT } from '../../../utils/utils'
+import { getUserData } from '../login/action'
+import { useDispatch } from 'react-redux'
+import { setUserData, userState } from '@/lib/user-slice'
+import { Spinner } from '@nextui-org/react'
 // import { NextResponse, type NextRequest } from 'next/server'
 
 export default function ChangePasswordPage() {
@@ -16,6 +21,17 @@ export default function ChangePasswordPage() {
   const[isLoading, setLoadingStatus] = useState(false)
   const[isError, setErrorStatus] = useState(false)
   const[statusMessage, setStatusMessage] = useState('')
+  const dispatch = useDispatch()
+
+  const getCookie = async () => {
+    const cookie = await getCookieValue('sb-tlkjjqausqszenvlfjbh-auth-token')
+    if(cookie){
+      const authToken = cookie.split('-')[1]
+      const decodedClaims = decodeJWT(authToken)
+      const userData = await getUserData(decodedClaims.user.email)
+      dispatch(setUserData(userData.user as userState))
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -37,6 +53,7 @@ export default function ChangePasswordPage() {
           setLoadingStatus(false)
           return;
         }else{
+          await getCookie()
           // console.log(resetData)
           setErrorStatus(false)
           setStatusMessage('Password successfully changed! You will be redirected to the home page shortly.')
@@ -91,9 +108,7 @@ export default function ChangePasswordPage() {
                 type="submit"
               >
                 {isLoading ? (
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
+                  <Spinner size={'sm'} color='primary'/>
                 ) : (
                   "Submit →"
                 )}

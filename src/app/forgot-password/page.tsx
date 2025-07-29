@@ -1,21 +1,48 @@
 'use client'
 import { motion } from 'framer-motion'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { AuroraBackground } from '@/components/ui/aurora-background'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { cn } from '../../../utils/aceternity/cn'
 import { createClient } from '../../../utils/supabase/client'
+import { Spinner } from '@nextui-org/react'
 
 export default function ForgotPasswordPage() {
   const[email, setEmail] = useState('')
   const[isLoading, setLoadingStatus] = useState(false)
   const[isError, setErrorStatus] = useState(false)
   const[statusMessage, setStatusMessage] = useState('')
+  const[isButtonDisabled, setIsButtonDisabled] = useState(false)
+  const[timer, setTimer] = useState<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if(isButtonDisabled && timer === null){
+      const timeout = setTimeout(() => {
+        setIsButtonDisabled(false)
+        setTimer(null)
+      }, 30000)
+      setTimer(timeout)
+    }
+
+    return () => {
+      if(timer !== null){
+        clearTimeout(timer)
+      }
+    }
+  }, [isButtonDisabled, timer])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    if(isButtonDisabled){
+      alert('Please wait for 30 seconds before trying again.')
+      return
+    }
+
     setLoadingStatus(true)
+    setIsButtonDisabled(true)
+
     try{
       const supabase = createClient()
       const origin = window.location.origin
@@ -73,9 +100,7 @@ export default function ForgotPasswordPage() {
                 type="submit"
               >
                 {isLoading ? (
-                  <div className="flex justify-center items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-white"></div>
-                  </div>
+                  <Spinner size={'sm'} color='primary'/>
                 ) : (
                   "Send Email →"
                 )}
