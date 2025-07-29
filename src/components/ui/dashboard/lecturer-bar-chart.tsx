@@ -16,7 +16,6 @@ interface BarChartProps {
 }
 
 const LecturerBarChart : React.FC<BarChartProps> = ({title, userId}) => {
-    // select 
     const [classesDDL, setClassesDDL] = React.useState<string[]>([]);
     const [classes, setClasses] = React.useState<SelectList[]>([]);
     const [coursesDDL, setCoursesDDL] = React.useState<string[]>([]);

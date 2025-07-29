@@ -14,16 +14,15 @@ import {
 import { Avatar } from '@files-ui/react'
 import { updateStaff, updateStudent, fetchStaff, fetchStudent, createLecturerCourse, deleteLecturerCourse, fetchLecturerCoursesByStaffId} from '@/app/api/user-management/manage-users';
 import { DateValue, now, parseAbsoluteToLocal } from '@internationalized/date';
-import { fetchRoles } from '@/app/api/user-management/manage-roles';
 import { RootState } from '@/lib/store';
 import { useDispatch, useSelector } from 'react-redux';
 import { loadUserFromStorage } from '@/lib/user-slice';
 import { MsStaff, MsStudent, SelectList, LecturerCourse } from '@/app/api/data-model';
 import { fetchDepartments } from '@/app/api/user-management/manage-users';
 import { fetchCourses } from '@/app/api/enrollment/manage-courses';
-import EyeComponent from '@/components/ui/eye-component';
-import { updateUserEmail, updateUserPassword } from '@/app/api/edit-profile/edit-profile';
+import { updateUserEmail } from '@/app/api/edit-profile/edit-profile';
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage } from '@/app/api/azure-helper';
+import { fetchLearningStyle } from '@/app/api/enrollment/manage-course-detail';
 
 // components
 
@@ -72,7 +71,6 @@ const EditProfile = () => {
   const today = new Date().toISOString();
   const [userName, setUserName] = useState<string>("");
   const [userEmail, setUserEmail] = useState<string>("");
-  const [userPassword, setUserPassword] = useState<string>("el3me00/01/0001");
   const [userBirthDate, setUserBirthDate] = useState(parseAbsoluteToLocal(today));
   const [userAddress, setUserAddress] = useState<string>("");
   const [userRole, setUserRole] = useState<string>("");
@@ -80,34 +78,25 @@ const EditProfile = () => {
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [isLoading, setLoadingStatus] = useState<boolean>(false);
   const [isUploadProfilePicture, setIsUploadProfilePicture] = useState<boolean>(false);
-  const [touched, setTouched] = React.useState(false);
   const [touched2, setTouched2] = React.useState(false);
-  const [touched3, setTouched3] = React.useState(false);
   const [touched4, setTouched4] = React.useState(false);
-  const[isShowPassword, setShowPassword] = useState(false)
   const [courses, setCourse] = useState(new Set<string>([]));
+  const [initialLecturerCourse, setInitialLecturerCourse] = React.useState<string[]>([])
   const [gender, setGender] = useState<string>("");
+  const [departmentDropdownList, setDepartmentDropdownList] = React.useState<SelectList[]>([])
+  const [courseDropdownList, setCourseDropdownList] = React.useState<SelectList[]>([])
+  const [learningStyleDropdownList, setLearningStyleDropdownList] = React.useState<SelectList[]>([])
   const [genderDDL, setGenderDDL] = useState<SelectList[]>([
     { key: "M", label: "Male" },
     { key: "F", label: "Female" }
   ]);
-
-  const isCourseValid = courses.size !== 0
-  const isStudyProgramValid = student.DepartmentId !== ""
-
+  const lecturerRoleId = process.env.NEXT_PUBLIC_LECTURER_ROLE_ID || "";
+  const studentRoleId = process.env.NEXT_PUBLIC_STUDENT_ROLE_ID || "";
+  const isLearningStyleValid = student.LearningStyleId !== ""
   const isGenderValid = gender!== ""
-  const isRoleValid = userRole !== ""
   const validateEmail = (userEmail:string) => userEmail.match(/^[A-Z0-9._%+-]+@[A-Z0-9.-]+.[A-Z]{2,4}$/i)
-  const isPhoneNumberValid = userPhoneNumber == "" ? false : userPhoneNumber.match(/^[0-9]+$/) ? false : true
-  const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? false : true
-
-  const handleSelectionChange = (e: any) => {
-    setCourse(new Set(e.target.value.split(",")));
-  };
-
-  const togglePasswordVisibility = () => {
-    setShowPassword(!isShowPassword)
-  }
+  const isPhoneNumberValid = userPhoneNumber == "" ? false : userPhoneNumber.match(/^[0-9]+$/) ? true : false
+  const isEmailValid = userEmail == "" ? false : validateEmail(userEmail) ? true : false
 
   const convertDate = (date: any) => {
     return new Date(
@@ -124,8 +113,8 @@ const EditProfile = () => {
   const handleUploadPhoto = async (e: File) => {
     setIsUploadProfilePicture(true)
     let containerName = userData.roleCategory == "Staff" ? 'staff-data' : 'student-data'
-    console.log(containerName)
-    console.log(userData.roleCategory)
+    // console.log(containerName)
+    // console.log(userData.roleCategory)
     if(profilePictureUrl == null){
         let blobUrl = await uploadFileToAzureBlobStorage( containerName, e, userData.id, `${userData.name}_profile_picture`)
         setProfilePictureUrl(blobUrl)
@@ -138,13 +127,25 @@ const EditProfile = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if(userPassword != 'el3me00/01/0001'){
-        await updateUserPassword(userPassword)
+    if(userEmail == "" || userName == "" || userPhoneNumber == "" || userAddress == "" || gender == ""){
+        alert("Please fill in all required fields")
+        setLoadingStatus(false)
+        return;
+    }
+    if(!isPhoneNumberValid) {
+        alert("Please enter a valid phone number")
+        setLoadingStatus(false)
+        return;
+    }
+    if(!isEmailValid){
+        alert("Please enter a valid email")
+        setLoadingStatus(false)
+        return;
+    }
+    if(userEmail != userData.email){
+        await updateUserEmail(userEmail)
     }
     if(userData.role == "Administrator" || userData.role == "Lecturer"){
-        if(userEmail != userData.email){
-            await updateUserEmail(userEmail)
-        }
         const birthDate = convertDate(userBirthDate)
         let updateStaffData: MsStaff = {
             StaffId: staff?.StaffId,
@@ -164,7 +165,7 @@ const EditProfile = () => {
         }
         await updateStaff(updateStaffData).then(async(res) => {
             if(res.statusCode == 200){
-                if(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(userRole == lecturerRoleId){
                     const coursesArray = Array.from(courses).filter(item => item !== "")
                     const addedCourse = coursesArray.filter(item => !initialLecturerCourse.includes(item))
                     const removedCourse = initialLecturerCourse.filter(item => !coursesArray.includes(item))
@@ -187,7 +188,7 @@ const EditProfile = () => {
                         })
                     }
                     for(let i = 0; i < removedCourse.length; i++){
-                        console.log(removedCourse[i])
+                        // console.log(removedCourse[i])
                         await deleteLecturerCourse(staff.StaffId, removedCourse[i]).then((res2) => {
                             if(res2.statusCode != 200){
                                 alert(res2.message)
@@ -244,22 +245,8 @@ const EditProfile = () => {
     }
   }
 
-  const [departmentDropdownList, setDepartmentDropdownList] = React.useState<SelectList[]>([])
-  const [roleDropdownList, setRoleDropdownList] = React.useState<SelectList[]>([])
-  const [courseDropdownList, setCourseDropdownList] = React.useState<SelectList[]>([])
-  const [initialLecturerCourse, setInitialLecturerCourse] = React.useState<string[]>([])
   useEffect(() => {
     dispatch(loadUserFromStorage())
-    fetchRoles().then((object: any) => {
-        const res = object.data.map((z: any) => {
-            return{
-                key: z.RoleId,
-                label: z.RoleName,
-                roleCategoryId: z.RoleCategoryId
-            }
-        })
-        setRoleDropdownList(res)
-    });
     if(userData.role == "Administrator" || userData.role == "Lecturer"){
         fetchStaff(userData.id).then((res) => {
             if(res.statusCode != 200){
@@ -274,7 +261,7 @@ const EditProfile = () => {
                 setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
                 setStaff(res.data)
                 setProfilePictureUrl(res.data.ProfilePictureUrl)
-                if(res.data.RoleId == "lec818d2-9047-4f39-888a-9848a0bcbbc1"){
+                if(res.data.RoleId == lecturerRoleId){
                     fetchLecturerCoursesByStaffId(userData.id).then((res3) => {
                         if(res3.statusCode != 200){
                             alert(res3.message)
@@ -302,6 +289,15 @@ const EditProfile = () => {
                 setUserBirthDate(parseAbsoluteToLocal(res.data.BirthDate))
                 setStudent(res.data)
             }
+        })
+        fetchLearningStyle().then((object: any) => {
+            const res = object.data.map((z: any) => {
+                return{
+                    key: z.LearningStyleId,
+                    label: z.LearningStyleName,
+                }
+            })
+            setLearningStyleDropdownList(res)
         })
     }
     fetchDepartments().then((object: any) => {
@@ -346,10 +342,13 @@ const EditProfile = () => {
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
                         autoFocus
+                        isRequired
                         label="User Name"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
                         placeholder="Enter user name"
+                        errorMessage="Please do not leave this field empty"
+                        isInvalid={userName == "" ? true : false}
                         variant="bordered"
                         onChange={(e) => {setUserName(e.target.value)}}
                         value={userName}
@@ -357,7 +356,9 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
+                        isDisabled={true}
                         autoFocus
+                        isRequired
                         label="User Email" 
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -365,30 +366,14 @@ const EditProfile = () => {
                         variant="bordered"
                         onChange={(e) => {setUserEmail(e.target.value)}}
                         value={userEmail}
-                        isInvalid={isEmailValid}
+                        isInvalid={!isEmailValid}
                         errorMessage="Please enter a valid email"
                     />
                 </Grid>
                 <Grid item xs={6} sm={6} className="mb-2">
                     <Input
                         autoFocus
-                        label="User Password"
-                        className="w-full sm:max-w-[80%]"
-                        labelPlacement='inside'
-                        placeholder="Enter password"
-                        variant="bordered"
-                        endContent={
-                            <EyeComponent isOpen={isShowPassword} toggleVisibility={togglePasswordVisibility}/>
-                        }
-                        type={isShowPassword ? "text" : "password"}
-                        onChange={(e) => {setUserPassword(e.target.value)}}
-                        value={userPassword}
-                        errorMessage="Please enter a password"
-                    />
-                </Grid>
-                <Grid item xs={6} sm={6} className="mb-2">
-                    <Input
-                        autoFocus
+                        isRequired
                         label="User Phone Number"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
@@ -396,7 +381,7 @@ const EditProfile = () => {
                         variant="bordered"
                         onChange={(e) => {setUserPhoneNumber(e.target.value)}}
                         value={userPhoneNumber}
-                        isInvalid={isPhoneNumberValid}
+                        isInvalid={!isPhoneNumberValid}
                         errorMessage="Please enter a valid phone number"
                     />
                 </Grid>
@@ -406,7 +391,7 @@ const EditProfile = () => {
                         label="User Birth Date"
                         className="w-full sm:max-w-[80%]"
                         variant='bordered'
-                        granularity='second'
+                        granularity='day'
                         labelPlacement="inside"
                         onChange={setUserBirthDate}
                         showMonthAndYearPickers
@@ -415,12 +400,14 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Input
-                        required
+                        isRequired
                         autoFocus
                         label="User Address"
                         className="w-full sm:max-w-[80%]"
                         labelPlacement='inside'
                         placeholder="Enter user address"
+                        errorMessage="Please do not leave this field empty"
+                        isInvalid={userAddress == "" ? true : false}
                         variant="bordered"
                         onChange={(e) => {setUserAddress(e.target.value)}}
                         value={userAddress}
@@ -428,7 +415,7 @@ const EditProfile = () => {
                 </Grid>
                 <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                     <Select
-                      required
+                      isRequired
                       label= "Gender"
                       variant="bordered"
                       placeholder="Select user gender"
@@ -447,67 +434,52 @@ const EditProfile = () => {
                       ))}
                     </Select>
                 </Grid>
-                <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
-                    <Select
-                      required
-                      label= "User Role"
-                      variant="bordered"
-                      placeholder="Select user role"
-                      errorMessage={isRoleValid || !touched ? "" : "You need to select a role category"}
-                      isInvalid={isRoleValid || !touched ? false: true}
-                      selectedKeys={[userRole]}
-                      className="w-full sm:max-w-[80%]"
-                      onChange={(e) => {setUserRole(e.target.value)}}
-                      onClose={() => setTouched(true)}
-                      value={userRole}
-                    >
-                      {roleDropdownList.map((roles) => (
-                        <SelectItem key={roles.key}>
-                          {roles.label}
-                        </SelectItem>
-                      ))}
-                    </Select>
-                </Grid>
-                {(userRole == "stu01e3e-bb2b-4c63-a62c-8c7f01f0120c") && (
+                {(userRole == studentRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
-                            required
-                            label= "Study Program"
-                            variant="bordered"
-                            placeholder="Select student study program"
-                            errorMessage={ isStudyProgramValid || !touched2 ? "" : "You need to select a study program"}
-                            isInvalid={ isStudyProgramValid || !touched2 ? false: true}
-                            selectedKeys={[student.DepartmentId]}
-                            className="w-full sm:max-w-[80%]"
-                            onChange={(e) => {setStudent({...student, DepartmentId: e.target.value})}}
-                            onClose={() => setTouched2(true)}
-                            value={student.DepartmentId}
-                            >
-                            {departmentDropdownList.map((major: SelectList) => (
-                                <SelectItem key={major.key}>
-                                {major.label}
-                                </SelectItem>
-                            ))}
+                                isRequired
+                                label= "Learning Style"
+                                variant="bordered"
+                                placeholder="Select your preferred learning style"
+                                errorMessage={ isLearningStyleValid || !touched2 ? "" : "You need to select a learning style"}
+                                isInvalid={ isLearningStyleValid || !touched2 ? false: true}
+                                selectedKeys={[student.LearningStyleId ?? ""]}
+                                className="w-full sm:max-w-[80%]"
+                                onChange={(e) => {setStudent({...student, LearningStyleId: e.target.value})}}
+                                onClose={() => setTouched2(true)}
+                                value={student.LearningStyleId ?? ""}
+                                >
+                                {learningStyleDropdownList.map((major: SelectList) => (
+                                    <SelectItem key={major.key}>
+                                    {major.label}
+                                    </SelectItem>
+                                ))}
                             </Select>
+                        </Grid>
+                        <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
+                            <Input
+                                isDisabled
+                                label= "Study Program"
+                                variant="bordered"
+                                className="w-full sm:max-w-[80%]"
+                                value={departmentDropdownList.find(x => x.key == student.DepartmentId)?.label}
+                            />
                         </Grid>
                     </>
                 )}
-                {(userRole == "lec818d2-9047-4f39-888a-9848a0bcbbc1") && (
+                {(userRole == lecturerRoleId) && (
                     <>
                         <Grid item xs={6} sm={6} md={6} lg={6} className="mb-2">
                             <Select
                                 required
+                                isDisabled
                                 label= "Course"
                                 selectionMode="multiple"
                                 variant="bordered"
                                 placeholder="Select course"
-                                errorMessage={ isCourseValid || !touched3 ? "" : "You need to select a course"}
-                                isInvalid={ isCourseValid || !touched3 ? false: true}
                                 selectedKeys={courses}
                                 className="w-full sm:max-w-[80%]"
-                                onChange={handleSelectionChange}
-                                onClose={() => setTouched3(true)}
                                 >
                                 {courseDropdownList.map((course: SelectList) => (
                                     <SelectItem key={course.key}>

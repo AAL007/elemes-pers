@@ -1,15 +1,16 @@
-'use client'
+'use server'
 
 const { BlobServiceClient, StorageSharedKeyCredential } = require('@azure/storage-blob')
-const azureStorageName = process.env.ACCOUNT_NAME
-const sasToken = "sv=2022-11-02&ss=bfqt&srt=co&sp=rwdlacupyx&se=2025-02-28T16:07:07Z&st=2024-08-29T08:07:07Z&spr=https&sig=navaS7%2FMj1RxsWjMT3Fl51DGsTYklZgZlVKIbmg%2B%2Fqo%3D"
-const azureStorageUrl = `https://elemesstorage.blob.core.windows.net`
+const sasToken = process.env.SAS_TOKEN
+const azureStorageUrl = process.env.AZURE_STORAGE_URL
 
 export async function uploadFileToAzureBlobStorage(containerName: string, file: File, folderName: string, fileName: string) {
-    const blobServiceClient = new BlobServiceClient(`${azureStorageUrl}?${sasToken}`)
+    const blobServiceClient = new BlobServiceClient(`${azureStorageUrl}?${sasToken}`);
     let containerClient = blobServiceClient.getContainerClient(containerName);
-    const fileType = file.type.split('/').pop();
-    const newFileName = `${folderName}/${fileName}.${fileType}`;
+    
+    const fileExtension = file.name.split('.').pop();
+    const newFileName = `${folderName}/${fileName}.${fileExtension}`;
+    
     const blockBlobClient = containerClient.getBlockBlobClient(newFileName);
     await blockBlobClient.uploadData(file, {
         blobHTTPHeaders: { blobContentType: file.type }

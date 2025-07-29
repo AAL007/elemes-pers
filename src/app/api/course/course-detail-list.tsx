@@ -1,12 +1,36 @@
 'use server'
 
 import { createClient } from "../../../../utils/supabase/server"
-import { ForumPost, ForumThread, StudentActivityLog, StudentAttendanceLog, AssessmentAnswer, StudentSessionLog } from "../data-model";
+import { ForumPost, ForumThread, StudentActivityLog, StudentAttendanceLog, AssessmentAnswer, Score, StudentSessionLog } from "../data-model";
 
 const supabase = createClient();
 
 export async function fetchSessionList(studentId: string, courseId: string, learningStyleId: string) {
     const { data, error } = await supabase.rpc('fetch_session_list', {student_id: studentId, course_id: courseId, learning_style_id: learningStyleId})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
+export async function fetchLecturerSessionList(courseId: string){
+    const { data, error } = await supabase.rpc('fetch_lecturer_session_list', {course_id: courseId})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
+export async function fetchStudentAttendances(courseId: string, classId: string, sessionId: string){
+    const { data, error } = await supabase.rpc('fetch_student_attendances', {course_id: courseId, class_id: classId, session_id: sessionId})
+    if(error){
+        return {success: false, data: [], message: error.message}
+    }
+    return {success: true, data: data, message: 'Data fetched successfully!'}
+}
+
+export async function fetchSessionStatus(studentId: string, courseId: string, learningStyleId: string) {
+    const { data, error } = await supabase.rpc('fetch_session_status', {student_id: studentId, course_id: courseId, learning_style_id: learningStyleId})
     if(error){
         return {success: false, data: [], message: error.message}
     }
@@ -29,10 +53,10 @@ export async function fetchPeople(courseId: string, classId: string){
     return {success: true, data: data, message: 'Data fetched successfully!'}
 }
 
-export async function fetchAssignmentList(studentId: string, courseId: string, classId: string){
-    const { data, error } = await supabase.rpc('fetch_assignment_list', {student_id: studentId, course_id: courseId, class_id: classId})
+export async function isAssignmentCleared(studentId: string, assignmentId: string){
+    const { data, error } = await supabase.from('Score').select('Score').eq('StudentId', studentId).eq('AssessmentId', assignmentId).limit(1).single()
     if(error){
-        return {success: false, data: [], message: error.message}
+        return {success: false, data: null, message: error.message}
     }
     return {success: true, data: data, message: 'Data fetched successfully!'}
 }
@@ -137,12 +161,12 @@ export async function createAssessmentAnswer(object: AssessmentAnswer){
     return {success: true, data: data, message: 'Data created successfully!'}
 }
 
-export async function updateAssessmentAnswer(object: AssessmentAnswer){
-    const { data, error } = await supabase.from('AssessmentAnswer').update(object).eq('StudentId', object.StudentId).eq('AssessmentId', object.AssessmentId)
+export async function createScore(object: Score){
+    const { data, error } = await supabase.from('Score').insert(object)
     if(error){
         return {success: false, data: [], message: error.message}
     }
-    return {success: true, data: data, message: 'Data updated successfully!'}
+    return {success: true, data: data, message: 'Data created successfully!'}
 }
 
 export async function fetchThreads(forumId: string){

@@ -4,11 +4,6 @@ import { createClient } from "../../../../utils/supabase/server";
 
 const supabase = createClient()
 
-const formatDate = (date: Date) => {
-    const pad = (num: number) => num.toString().padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
 // Administrator
 export async function fetchAdministratorNotification(){
     const res = await supabase.rpc('fetch_administrator_notification')
@@ -88,6 +83,17 @@ export async function fetchTotalActiveUser() {
 }
 
 // Student
+export async function updateLearningStyle(learningStyleName: string, studentId: string){
+    const res = await supabase.from('MsLearningStyle').select('LearningStyleId').eq('LearningStyleName', learningStyleName).limit(1).single()
+    if(res.error){
+        return {success: false, message: res.error.message, data: []}
+    }
+    const { data, error } = await supabase.from('MsStudent').update({LearningStyleId: res.data.LearningStyleId, UpdatedDate: new Date()}).eq('StudentId', studentId)
+    if(error){
+        return {success: false, message: error.message, data: []}
+    }
+    return {success: true, message: 'Data updated successfully!', data: data}
+}
 
 export async function fetchLearningStyle(studentId: string){
     const {data, error} = await supabase.from("MsStudent").select("LearningStyleId").eq("StudentId", studentId)

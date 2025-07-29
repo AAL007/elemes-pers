@@ -5,10 +5,11 @@ import "@/components/ui/component.css"
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { 
-    fetchSessionList, 
+    fetchSessionList,
+    fetchSessionStatus,
+    fetchAttendanceList, 
     fetchPeople, 
-    fetchAttendanceList,
-    fetchAssignmentList,
+    isAssignmentCleared,
     isActivityLogWithSameLearningStyleExist,
     createOrUpdateSessionLog,
     createActivityLog,
@@ -17,9 +18,10 @@ import {
     updateDiscussion, 
     deleteDiscussion,
     createAssessmentAnswer,
-    updateAssessmentAnswer 
+    createScore,
 } from "@/app/api/course/course-detail-list";
 import { fetchLearningStyle } from "@/app/api/home/dashboard";
+import { IconDownload } from "@tabler/icons-react";
 import { 
     Tabs, 
     Tab, 
@@ -39,29 +41,32 @@ import {
     useDisclosure,
     Spinner,
     Textarea,
-    Tooltip
+    Tooltip,
+    RadioGroup,
+    Radio
 } from "@nextui-org/react";
 import Loading from "../../loading";
-import { AssessmentAnswer, ForumPost, ForumPostResponse, StudentActivityLog, StudentSessionLog } from "@/app/api/data-model";
-import { generateGUID, formatDateTime, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
+import { AssessmentAnswer, ForumPost, ForumPostResponse, StudentActivityLog, StudentSessionLog, Score } from "@/app/api/data-model";
+import { generateGUID, formatDateTime, fetchFileFromUrl } from "../../../../../utils/utils";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { FileUpload } from "@/components/ui/file-upload";
 import PeopleTableComponent from "@/components/ui/people-table";
 import AttendanceTableComponent from "@/components/ui/attendance-table";
-import { IconDownload } from "@tabler/icons-react";
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
 import RatingModal from "@/components/ui/rating-modal";
+import { fetchQuestionAnswer } from "@/app/api/assignment/create-edit-assignment";
+import { question } from "../../assignment/create-edit-assignment/[...parameters]/page";
 
 type SessionList = {
+    assessmentId: string;
     contentUrl: string;
-    file: File;
+    // file: File;
     sessionId: string;
     sessionName: string;
     sessionNumber: number;
     isContentClicked: boolean;
     isAssignmentClicked: boolean;
-    isSessionLocked: boolean;
 }
 
 export type People = {
@@ -93,6 +98,12 @@ export type AssignmentResponse = {
     updatedDate: string;
 }
 
+type questionAnswer = {
+    questionId: string;
+    optionId: string;
+    isAnswer: boolean;
+}
+
 const defaultDiscussion: ForumPostResponse = {
     ForumId: '',
     SessionId: '',
@@ -106,7 +117,6 @@ const defaultDiscussion: ForumPostResponse = {
     CreatorType: '',
     CreatedDate: new Date().toISOString(),
     UpdatedDate: '',
-    File: null,
     NumOfReplies: 0
 }
 
@@ -128,7 +138,6 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     const [files, setFiles] = React.useState<File[]>([]);
     const [uploadClicked, setUploadClicked] = React.useState(false);
     const [existingFile, setExistingFile] = React.useState<File | null>(null);
-    const [assignments, setAssignments] = React.useState<AssignmentResponse[]>([]);
     const [attendance, setAttendance] = React.useState<Attendance[]>([]);
     const [isButtonClicked, setIsButtonClicked] = React.useState(false);
     const [selected, setSelected] = React.useState<string>("content");
@@ -139,9 +148,89 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     const [duration, setDuration] = React.useState<number>(0);
     const [existingRating, setExistingRating] = React.useState<number | null>(null);
     const [disabledKeys, setDisabledKeys] = React.useState<string[]>([]);
+    const [majorActiveTab, setMajorActiveTab] = React.useState<string>('sessions');
+    const [questions, setQuestions] = React.useState<question[]>([]);
+    const [counter, setCounter] = React.useState(0);
+    const [answers, setAnswers] = React.useState<questionAnswer[]>([]);
+    const [assessmentId, setAssessmentId] = React.useState<string>("");
+    const [score, setScore] = React.useState<number>(0);
+    const [isAssessmentCleared, setIsAssessmentCleared] = React.useState<boolean>(false);
+    const [isQuizStarted, setIsQuizStarted] = React.useState<boolean>(false);
+    const [isFetchingQuestionAnswer, setIsFetchingQuestionAnswer] = React.useState<boolean>(true);
 
     const handleFileUpload = (files: File[]) => {
         setFiles(files);
+    }
+
+    const fetchIsAssignmentCleared = async(assessmentId: string) => {
+        const res = await isAssignmentCleared(userData.id, assessmentId);
+        if(!res.success){
+            setScore(0);
+            setIsAssessmentCleared(false);
+            setIsQuizStarted(false);
+            return;
+        }
+        if(res.data){
+            setScore(res.data.Score);
+            setIsAssessmentCleared(true);
+            setIsQuizStarted(false);
+            return;
+        }
+    }
+
+    const fetchingExistingQuestionAnswer = async(assessmentId: string) => {
+        setIsFetchingQuestionAnswer(true);
+        const res = await fetchQuestionAnswer(assessmentId)
+        if(res.success){
+            let tempQuestions: question[] = []
+            let questionMap: {[key: string]: question} = {}
+
+            for(let i = 0; i < res.data.length; i++){
+                const row = res.data[i];
+                const { questionId, question, imageUrl, optionId, option, isAnswer } = row;
+
+                if (!questionMap[questionId]) {
+                    questionMap[questionId] = {
+                        questionId: questionId,
+                        question: question,
+                        image: null,
+                        imageUrl: imageUrl,
+                        options: []
+                    };
+                }
+
+                questionMap[questionId].options.push({
+                    optionId: optionId,
+                    option: option,
+                    isAnswer: isAnswer
+                });
+            }
+            tempQuestions = Object.values(questionMap);
+
+            const answers = tempQuestions.map((question) => {
+                return {
+                    questionId: question.questionId,
+                    optionId: '',
+                    isAnswer: false
+                }
+            })
+
+            setAnswers(answers);
+            
+            setQuestions(tempQuestions)
+
+            setTimeout(() => {
+                setIsFetchingQuestionAnswer(false);
+            }, 1000)
+        }
+    }
+
+    const handleAnswerChange = (value: string, questionId: string, isAnswer: boolean) => {
+        setAnswers((prevAnswers) =>
+            prevAnswers.map((answer) =>
+              answer.questionId === questionId ? { ...answer, optionId: value, isAnswer: isAnswer } : answer
+            )
+        );
     }
 
     const fetchSessionLists = async () => {
@@ -152,22 +241,33 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             return;
         }
         const sessionsList = await Promise.all(res.data.map(async(z: any) => {
-            const file = (z.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? await fetchFileFromUrl(z.contentUrl) : null;
+            // const file = (z.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? await fetchFileFromUrl(z.contentUrl) : null;
             return {
+                assessmentId: z.assessmentId,
                 contentUrl: z.contentUrl,
-                file: file,
+                // file: file,
                 sessionId: z.sessionId,
                 sessionName: z.sessionName,
                 sessionNumber: z.sessionNumber,
                 isContentClicked: z.isContentClicked,
                 isAssignmentClicked: z.isAssignmentClicked,
-                isSessionLocked: z.isSessionLocked
             }
         }))
-        const disabledKeys = sessionsList.filter(x => x.isSessionLocked).map(x => x.sessionId);
-        setDisabledKeys(disabledKeys);
         setSessionsList(sessionsList);
         setIsLoading(false);
+        // setTimeout(() => {
+            
+        // }, 1000)
+    }
+
+    const fetchSessionStatuses = async () => {
+        const res = await fetchSessionStatus(userData.id, params.parameters[0], learningStyleId);
+        if(!res.success){
+            alert(res.message);
+            return;
+        }
+        const disabledKeys = res.data.filter((x: any) => x.isSessionLocked).map((x: any) => x.sessionId);
+        setDisabledKeys(disabledKeys);
     }
 
     const handleSessionLog = async(sessionId: string, isContentClicked: boolean, isAssignmentClicked: boolean) => {
@@ -185,6 +285,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             alert(res.message);
             return;
         }
+        fetchSessionStatuses();
     }
 
     useEffect(() => {
@@ -192,14 +293,12 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         if(selected === "content"){
             handleSessionLog(sessionId, true, false);
         }else if(selected === "assignment"){
-            handleSessionLog(sessionId, false, true);
+            handleSessionLog(sessionId, true, true);
         }
     }, [selected])
 
     useEffect(() => {
-        if(selected === "content"){
-            setStartTime(Date.now());
-        }else{
+        if(majorActiveTab != 'sessions') {
             if(startTime){
                 const endTime = Date.now();
                 const duration = endTime - startTime;
@@ -207,8 +306,20 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 setDuration(Math.round(duration/1000));
                 setStartTime(null)
             }
+        }else{
+            if(selected === "content"){
+                setStartTime(Date.now());
+            }else{
+                if(startTime){
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+                    console.log(`User spent ${Math.round(duration / 1000)} seconds on the content tab`)
+                    setDuration(Math.round(duration/1000));
+                    setStartTime(null)
+                }
+            }
         }
-    }, [selected, sessionId])
+    }, [selected, sessionId, majorActiveTab])
 
     useEffect(() => {
         if(duration == 0){
@@ -239,6 +350,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             alert(res.message);
             return;
         }
+        fetchSessionStatuses();
         fetchIsActivityLogWithSameLearningStyleExist();
     }
 
@@ -252,7 +364,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
             return;
         }
         const discussions = await Promise.all(res.data.map(async(z: any) => {
-            const file = z.contentUrl != null ? await fetchFileFromUrl(z.contentUrl) : null;
+            // const file = z.contentUrl != null ? await fetchFileFromUrl(z.contentUrl) : null;
             return {
                 ForumId: z.forumId,
                 SessionId: z.sessionId,
@@ -266,7 +378,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                 CreatorType: z.creatorType,
                 CreatedDate: z.createdDate,
                 UpdatedDate: z.updatedDate,
-                File: file,
+                // File: file,
                 NumOfReplies: z.numOfReplies
             }
         }))
@@ -274,80 +386,70 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
         setIsFetchingDiscussion(false);
     }
 
-    const renderFile = (file: File) => {
-        const fileName = file.name.split('?')[0].split('/').pop();
+    const renderFile = (file: string, menu: string) => {
+        const fileName = file.split('?')[0].split('/').pop();
         const fileExtension = fileName?.split('.').pop()?.toLowerCase();
         switch (true) {
             case fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png' || fileExtension === 'gif':
-                return <img alt={file.name} src={URL.createObjectURL(file)} className="w-full rounded-xl" />;
+                return <img alt={'image'} src={file} className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} />;
             case fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'avi' || fileExtension === 'mov':
-                return <video controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg':
-                return <audio controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'pdf':
-                return <iframe src={URL.createObjectURL(file)} className="w-full h-full rounded-xl" />;
+                return <video controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
+            case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg' || fileExtension === 'mpeg':
+                return <audio controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'doc' || fileExtension === 'docx' || fileExtension === 'xls' || fileExtension === 'xlsx' || fileExtension === 'ppt' || fileExtension === 'pptx':
-                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(URL.createObjectURL(file))}`} className="w-full h-full rounded-xl" />;
+                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file)}`} className="w-full h-full rounded-xl" />;
             default:
-                return <a href={URL.createObjectURL(file)} download={file.name}>Download Attachment</a>;
+                return (
+                    <div className="flex flex-row justify-start items-center">
+                        <IconDownload size={20} />
+                        <a href={file} download={'file'}>Download Attachment</a>
+                    </div>
+                );
         }
     }
 
-    const handleCreateAssessmentAnswer = async(sessionNumber: number) => {
-        if(files.length == 0){alert('Please upload your assignment'); setIsButtonClicked(false); return;}
-        let blobUrl = await uploadFileToAzureBlobStorage("assessment-answer", files[0], params.parameters[0], `${assignments.find(x => x.sessionNumber == sessionNumber)?.assessmentId ?? ''}/${userData.id}`);
-        const assessmentAnswer: AssessmentAnswer = {
+    const handleSubmitAssessmentAnswer = async() => {
+        const unansweredQuestions = answers.filter(x => x.optionId == '');
+        if(unansweredQuestions.length > 0){
+            alert('Please answer all the questions');
+            setIsButtonClicked(false);
+            return;
+        }
+        for(let i = 0; i < answers.length; i++){
+            const assessmentAnswer: AssessmentAnswer = {
+                AssessmentAnswerId: await generateGUID(),
+                AssessmentId: assessmentId,
+                StudentId: userData.id,
+                QuestionId: answers[i].questionId,
+                OptionId: answers[i].optionId,
+                IsCorrect: answers[i].isAnswer,
+                CreatedDate: new Date().toISOString(),
+            }
+            const res = await createAssessmentAnswer(assessmentAnswer);
+            if(!res.success){
+                alert(res.message);
+                setIsButtonClicked(false);
+                return;
+            }
+        }
+        const correctAnswer = answers.filter(x => x.isAnswer == true).length;
+        const score =Math.round(correctAnswer / answers.length * 100);
+        const newScore: Score = {
             StudentId: userData.id,
-            AssessmentId: assignments.find(x => x.sessionNumber == sessionNumber)?.assessmentId ?? '',
-            AnswerUrl: blobUrl,
+            AssessmentId: assessmentId,
+            Score: score,
             CreatedDate: new Date().toISOString(),
-            UpdatedDate: null,
-            Chances: (assignments.find(x => x.sessionNumber == sessionNumber)?.assessmentChances ?? 1) - 1
         }
-        const res = await createAssessmentAnswer(assessmentAnswer);
+        const res = await createScore(newScore);
         if(!res.success){
             alert(res.message);
-            setFiles([]);
             setIsButtonClicked(false);
             return;
         }
-        setFiles([]);
         setIsButtonClicked(false);
-        fetchAssignmentLists();
-        alert('Assessment Answer Created');
-    }
-
-    const handleUpdateAssessmentAnswer = async(sessionNumber: number) => {
-        if(files.length == 0){alert('Please upload your assignment'); setIsButtonClicked(false); return;}
-        let blobUrl = await replaceFileInAzureBlobStorage("assessment-answer", files[0], params.parameters[0], `${assignments.find(x => x.sessionNumber == sessionNumber)?.assessmentId ?? ''}/${userData.id}`);
-        const updatedAssessmentAnswer: AssessmentAnswer = {
-            StudentId: userData.id,
-            AssessmentId: assignments.find(x => x.sessionNumber == sessionNumber)?.assessmentId ?? '',
-            AnswerUrl: blobUrl,
-            CreatedDate: assignments.find(x => x.sessionNumber == sessionNumber)?.createdDate ?? new Date().toISOString(),
-            UpdatedDate: new Date().toISOString(),
-            Chances: (assignments.find(x => x.sessionNumber == sessionNumber)?.studentChances ?? 1) - 1
-        }
-        const res = await updateAssessmentAnswer(updatedAssessmentAnswer);
-        if(!res.success){
-            alert(res.message);
-            setFiles([]);
-            setIsButtonClicked(false);
-            return;
-        }
-        setFiles([]);
-        setIsButtonClicked(false);
-        fetchAssignmentLists();
-        alert('Assessment Answer Updated successfully');
-    }
-
-    const fetchAssignmentLists = async() => {
-        const res = await fetchAssignmentList(userData.id, params.parameters[0], params.parameters[1]);
-        if(!res.success){
-            alert(res.message);
-            return;
-        }
-        setAssignments(res.data);
+        setIsQuizStarted(false);
+        fetchSessionStatuses();
+        fetchIsAssignmentCleared(assessmentId);
     }
 
     const fetchAttendances = async() => {
@@ -401,10 +503,14 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     }, [])
 
     useEffect(() => {
+        if (params.parameters[0] === undefined || params.parameters[1] === undefined || learningStyleId === '') {
+            return;
+        }
         setIsLoading(true);
-        fetchAssignmentLists();
+        // fetchAssignmentLists();
         fetchAttendances();
         fetchPeoples();
+        fetchSessionStatuses();
         fetchSessionLists();
     }, [params.parameters, learningStyleId])
 
@@ -416,6 +522,12 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
     useEffect(() => {
         if(sessionId === "") return;
         fetchingDiscussions();
+        const assessmentId = sessionsList.find(x => x.sessionId == sessionId)?.assessmentId;
+        // console.log(assessmentId)
+        setAssessmentId(assessmentId ?? '');
+        fetchIsAssignmentCleared(assessmentId ?? '');
+        setCounter(0)
+        fetchingExistingQuestionAnswer(assessmentId ?? '');
     }, [sessionId])
 
     return (
@@ -498,6 +610,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                         </Button>
                         {isCreate ? (
                         <Button color="primary" onPress={async() => {
+                            if(post.ContentTitle == "" || post.Content == ""){alert("Please fill all required input"); return;}
                             setIsLoading(true);
                             try{
                                 let forumId = await generateGUID();
@@ -534,6 +647,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                         </Button>
                         ) : isEdit ? (
                         <Button color="primary" onPress={async () => {
+                            if(post.ContentTitle == "" || post.Content == ""){alert("Please fill all required input"); return;}
                             setIsLoading(true);
                             try {
                                 console.log(files)
@@ -603,7 +717,7 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                     </div>
                 ) : (sessionsList.length != 0 && !isLoading) ? (
                     <>
-                        <Tabs className="flex w-full flex-col" variant="underlined" aria-label="Course Detail">
+                        <Tabs selectedKey={majorActiveTab} onSelectionChange={(e) => setMajorActiveTab(String(e))} className="flex w-full flex-col" variant="underlined" aria-label="Course Detail">
                             <Tab key={'sessions'} title={'Sessions'}>
                                 <Tabs disabledKeys={disabledKeys} onSelectionChange={(e) => {setSessionId(String(e))}} variant="light" className="flex w-full flex-col" aria-label="Sessions">
                                     {sessionsList.map((session) => (
@@ -613,29 +727,72 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                     <Tabs selectedKey={selected} onSelectionChange={(e) => {setSelected(String(e))}} className="flex w-full flex-col" aria-label="Session Detail">
                                                         <Tab key={'content'} title={session.sessionName}>
                                                             <div key={'content'}>
-                                                                {session.file != null ? renderFile(session.file) : learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461' ?  (
-                                                                    <iframe src={session.contentUrl} className="w-full h-[80vh]" allowFullScreen={true}></iframe>
+                                                                {(session.contentUrl != null && learningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? renderFile(session.contentUrl, 'content') : (session.contentUrl != null && learningStyleId == '33658389-418c-48e7-afc7-9c08ec31a461') ? (
+                                                                    <>
+                                                                        <p className="mb-4 font-semibold text-lg ">
+                                                                            {session.sessionNumber == 1 ? 
+                                                                            "Move the balloon near either the clothes or wall to see how the static electricity works. You can choose one or two balloons and see what will happen.":
+                                                                            session.sessionNumber == 2 ? 
+                                                                            "Use the property to affect the lever. Keep the plank balance. You can see how the mass of the object affect the plank balance." :
+                                                                            session.sessionNumber == 3 ?
+                                                                            "Play with the voltage and resistance. You can see how the circuit will change when either voltage or resistance is fixed and varied." : 
+                                                                            session.sessionNumber == 4 ? 
+                                                                            "Play with the resistivity, length and area. You can see how the resistance will change while changing the variables." :
+                                                                            session.sessionNumber == 5 ?
+                                                                            "You can select five modes to play include intro (basic of the sound waves), measure (measure how long is the sound waves based on the frequency and amplitude), two sources (sound waves from two sources), reflection (play with the frequency, amplitude, wall angle and position to see how the sound waves will reflect from the wall) and air pressure (play with the frequency, amplitude, audio control and air density in box to see the air pressure in the box)." :
+                                                                            "Play with the light include white light, monochromatic light and rainbows to see how a person will describe the light color."}
+                                                                        </p>
+                                                                        <iframe src={session.contentUrl} className="w-full h-[80vh]" allowFullScreen={true}></iframe>
+                                                                    </>
                                                                 ) : <p>No content available</p>}
                                                             </div>
                                                         </Tab>
                                                         <Tab key={'assignment'} title={'Assignment'}>
-                                                            <Button onClick={() => {window.location.href = assignments.find(x => x.sessionNumber == session.sessionNumber)?.assessmentUrl ?? '404'}} className="w-full mb-3" color="primary"><IconDownload/> Download Assignment</Button>
-                                                            <div className={`border-2 border-350 rounded-2xl`} onClick={() => setUploadClicked(true)}>
-                                                                <p className="text-neutral-600 ml-3 mt-2" style={{ fontSize: "13.5px" }}>{`Upload Your Assignment`}</p>
-                                                                <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Drag or drop your files here or click to upload</p>
-                                                                <p className="text-neutral-500 ml-3" style={{ fontSize: "13.5px" }}>Your chances: {(assignments.find(x => x.sessionNumber == session.sessionNumber)?.studentChances ?? 10)}</p>
-                                                                <FileUpload existingFile={existingFile} onChange={handleFileUpload} />
-                                                            </div>
-                                                            <div className="flex h-12 justify-end mt-5">
-                                                                <Button isDisabled={(assignments.find(x => x.sessionNumber == session.sessionNumber)?.studentChances ?? 10) == 0 ? true : false} isLoading={isButtonClicked} className="h-12" color="primary" onClick={() => {
-                                                                    setIsButtonClicked(true); 
-                                                                    if((assignments.find(x => x.sessionNumber == session.sessionNumber)?.studentChances ?? 10) == 10){
-                                                                        handleCreateAssessmentAnswer(session.sessionNumber)
-                                                                    }else{
-                                                                        handleUpdateAssessmentAnswer(session.sessionNumber)
-                                                                    }
-                                                                }}>Submit Assignment</Button>
-                                                            </div>
+                                                            {isFetchingQuestionAnswer && <Loading />}
+                                                            {(!isFetchingQuestionAnswer && !isAssessmentCleared && !isQuizStarted && questions.length != 0) && (
+                                                                <div className="flex flex-col w-full items-center">
+                                                                    <img className="mx-auto justify-center" src={'/img/start-quiz.png'} alt="start-quiz"/>
+                                                                    <div className="flex justify-end">
+                                                                        <Button className="h-14 w-24 mr-2" color="primary" variant="solid" onClick={() => {setIsQuizStarted(true)}}>Start Quiz</Button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {(!isFetchingQuestionAnswer && isAssessmentCleared && !isQuizStarted) && (
+                                                                <div className="flex flex-col justify-center mb-3 items-center w-full">
+                                                                    <img src={'/img/trophy.png'} alt="trophy"/>
+                                                                    <h2 className="font-extrabold text-4xl">{score}</h2>
+                                                                    <h2 className="font-medium text-lg mt-2">Your total score</h2>
+                                                                </div>
+                                                            )}
+                                                            {(!isFetchingQuestionAnswer && questions.length == 0) && (
+                                                                <div className="flex w-full justify-center items-center">
+                                                                    No questions available
+                                                                </div>
+                                                            )}
+                                                            {(!isFetchingQuestionAnswer && questions.length != 0 && isQuizStarted) && (
+                                                                <div className="px-2 py-2">
+                                                                    <div className="flex justify-between mt-4 items-center">
+                                                                        <h2 className="text-lg font-bold mr-5">{counter + 1}. {questions[counter].question}</h2>
+                                                                    </div>
+                                                                    {(questions[counter].imageUrl != null && questions[counter].imageUrl != '') && <img className="pl-4 w-1/4 h-1/4 mt-2 mb-2" src={questions[counter].imageUrl as string} alt="question-image" />}
+                                                                    <RadioGroup value={answers.find(x => x.questionId == questions[counter].questionId)?.optionId} onValueChange={(e) => {handleAnswerChange(e, questions[counter].questionId, questions[counter].options.find(x => x.optionId == e)?.isAnswer ? true : false)}}>
+                                                                        {questions[counter].options.map((option) => (
+                                                                            <Radio className="ml-4 shadow-sm items-center justify-start inline-flex w-full max-w-md bg-content1 cursor-pointer rounded-lg gap-2 p-2 border-2 data-[selected=true]:border-primary mt-2 mb-2" key={option.optionId} value={option.optionId.toString()}>{option.option}</Radio>
+                                                                        ))}
+                                                                    </RadioGroup>
+                                                                    <div className="mt-8 flex w-full pl-8 justify-end">
+                                                                        <div className="mr-3">
+                                                                            <Button variant="bordered" color="primary" isDisabled={counter == 0} onClick={() => {setCounter(counter - 1)}}>Back</Button>
+                                                                        </div>
+                                                                        <div className="">
+                                                                            <Button color="primary" isDisabled={(counter + 1) == questions.length} onClick={() => {setCounter(counter + 1)}}>Next</Button>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div className="mt-8 flex w-full pl-8 justify-end">
+                                                                        <Button isLoading={isButtonClicked} color="success" onClick={() => {setIsButtonClicked(true); handleSubmitAssessmentAnswer()}}>Submit</Button>
+                                                                    </div>
+                                                                </div>
+                                                            )}
                                                         </Tab>
                                                         <Tab key={'discussion'} title={'Discussion'}>
                                                             <div className="text-start">
@@ -673,8 +830,8 @@ const courseDetailList = ({params} : {params: {parameters: string}}) => {
                                                                                 </CardHeader>
                                                                                 <CardBody className="px-3 py-0 text-small text-default-400">
                                                                                     <h2 className="text-lg font-semibold text-gray-400">{item.ContentTitle}</h2>
-                                                                                    <p className={`pt-2 ${item.File != null ? 'pb-2' : ''}`}>{item.Content}</p>
-                                                                                    {item.File != null && (renderFile(item.File))}                                                 
+                                                                                    <p className={`pt-2 ${item.ContentUrl != null ? 'pb-2' : ''}`}>{item.Content}</p>
+                                                                                    {item.ContentUrl != null && (renderFile(item.ContentUrl, 'discussion'))}                                                 
                                                                                     <span className="pt-2">
                                                                                         {formatDateTime(item.UpdatedDate)}
                                                                                     </span>

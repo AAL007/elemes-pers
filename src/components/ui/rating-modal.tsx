@@ -56,6 +56,8 @@ const RatingModal = ({
         <Modal
             backdrop="blur"
             isDismissable={false}
+            isKeyboardDismissDisabled={false}
+            hideCloseButton={true}
             isOpen={isOpen} 
             onOpenChange={() => {
                 onOpenChange()
@@ -76,7 +78,7 @@ const RatingModal = ({
                     />
                 </ModalBody>
                 <ModalFooter>
-                    <Button color="danger" variant="flat" onPress={() => {onClose()}}>Close</Button>
+                    {/* <Button color="danger" variant="flat" onPress={() => {onClose()}}>Close</Button> */}
                     <Button color="primary" onPress={async() => {await addActivityLog(); onClose()}}>Submit</Button>
                 </ModalFooter>
                 </>

@@ -2,19 +2,16 @@
 import { Grid, Box } from '@mui/material';
 import PageContainer from '@/components/ui/container/page-container';
 // components
-import BarChart from '@/components/ui/dashboard/administrator-bar-chart';
 import DonutChart from '@/components/ui/dashboard/donut-chart';
 import RecentActivities from '@/components/ui/dashboard/recent-activities';
 import AdministratorToDoList from '@/components/ui/dashboard/administrator-to-do-list';
 import LecturerToDoList from '@/components/ui/dashboard/lecturer-to-do-list';
-// import AreaChart from '@/components/ui/dashboard/area-chart';
 import React, { useEffect, useState } from 'react';
 import { 
   fetchTotalActiveUser, 
   fetchTotalActiveClass, 
   fetchCompletedCourse,
   fetchAttendanceStatus,
-  fetchStudentsEnrolled, 
   fetchStudentRecentActivity,
   fetchAdministratorRecentActivities, 
   fetchActiveClassStudents, 
@@ -30,7 +27,6 @@ import LecturerBarChart from '@/components/ui/dashboard/lecturer-bar-chart';
 import StudentBarChart from '@/components/ui/dashboard/student-bar-chart';
 import Loading from './loading';
 import LearningStyleQuestionnaire from '@/components/ui/learning-style-questionnaire';
-import { set } from 'lodash';
 
 const Dashboard = () => {
   const [countsActiveUser, setCountsActiveUser] = useState<number[]>([]);
@@ -49,15 +45,12 @@ const Dashboard = () => {
 
   const fetchingAttendanceStatus = async () => {
     const res = await fetchAttendanceStatus(userData.id, courseId);
-    console.log(res)
     if (!res.success) {
-      console.log(res)
       alert(res.message);
       return;
     }
     let classes = ['Present', 'Absent', 'Not Started'];
     setClasses(classes)
-    console.log(res.data)
     let countPresent = res.data.filter((x: any) => x.attendanceStatus == 'Present').length;
     let countAbsent = res.data.filter((x: any) => x.attendanceStatus == 'Absent').length;
     let countNotStarted = res.data.filter((x: any) => x.attendanceStatus == 'Not Started').length;
@@ -221,7 +214,7 @@ const Dashboard = () => {
 
   return (
     <>
-      <LearningStyleQuestionnaire isLearningStyleNotExist={isLearningStyleNotExist}/>
+      <LearningStyleQuestionnaire setIsLearningStyleNotExist={setIsLearningStyleNotExist} isLearningStyleNotExist={isLearningStyleNotExist} userId={userData.id}/>
       <PageContainer title="Dashboard" description="Landing Page">
         <Box component="div" className={isLearningStyleNotExist ? 'overflow-hidden' : ''}>
           <Grid container spacing={3}>
@@ -237,10 +230,10 @@ const Dashboard = () => {
             <Grid item xs={12} lg={4}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Students" : "Completed Courses"} />
+                  <DonutChart label={roles} data={countsActiveUser} numberOfData={totalActiveUsers} title={userData.role == "Administrator" ? "Total Active Users" : userData.role == "Lecturer" ? "Total Active Students" : "Courses"} />
                 </Grid>
                 <Grid item xs={12}>
-                  <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignments" : "Total Attendance Logs"} />
+                  <DonutChart label={classes} data={countsActiveClass} numberOfData={totalActiveClasses} title={userData.role == "Administrator" ? 'Total Active Classes' : userData.role == "Lecturer" ? "Total Active Assignments" : "Total Attendances"} />
                 </Grid>
               </Grid>
             </Grid>

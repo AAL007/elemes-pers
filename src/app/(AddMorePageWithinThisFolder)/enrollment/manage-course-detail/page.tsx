@@ -55,12 +55,16 @@ import {
 } from "@/app/api/enrollment/manage-course-detail";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { Tooltip } from "@nextui-org/react"
-import { generateGUID, fetchFileFromUrl } from "../../../../../utils/boilerplate-function";
+import { generateGUID, fetchFileFromUrl } from "../../../../../utils/utils";
 
 const statusColorMap: Record<string, ChipProps["color"]>  = {
   active: "success",
   inactive: "danger",
 };
+
+const audioExtension = ['mp3', 'wav', 'mpeg', 'ogg']
+
+const visualExtension = ['mp4', 'avi', 'webm', 'mov', 'jpg', 'jpeg', 'png', 'gif']
 
 const columns = [
   {name: "SESSION NAME", uid: "SessionName", sortable: true},
@@ -133,6 +137,9 @@ const ManageCourseDetail = () => {
   const isValid = courseId !== ""
   const [contentLearningStyles, setContentLearningStyles] = React.useState<courseContent[]>([]);
   const [defaultCourseContent, setDefaultCourseContent] = React.useState([]);
+  const kinestheticLearningStyleId = process.env.NEXT_PUBLIC_KINESTHETIC_LEARNING_STYLE_ID || '';
+  const visualLearningStyleId = process.env.NEXT_PUBLIC_VISUAL_LEARNING_STYLE_ID || '';
+  const auditoryLearningStyleId = process.env.NEXT_PUBLIC_AUDITORY_LEARNING_STYLE_ID || '';
 
     const handleChangeFile = (e: React.ChangeEvent<HTMLInputElement>, learningStyleId: string) => {
       if(e.target.files){
@@ -168,7 +175,7 @@ const ManageCourseDetail = () => {
       const object = await fetchContentLearningStyle(sessionId);
       const contentLearningStyles = await Promise.all(
         object.data.map(async (z: any) => {
-          const file = z.LearningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461' ? await fetchFileFromUrl(z.ContentUrl) : null;
+          const file = z.LearningStyleId != kinestheticLearningStyleId ? await fetchFileFromUrl(z.ContentUrl) : null;
           return {
             LearningStyleId: z.LearningStyleId,
             Content: null,
@@ -300,35 +307,30 @@ const ManageCourseDetail = () => {
       case "SessionName":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{session.SessionName}</p>
           </div>
         );
       case "SessionNumber":
           return (
               <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{session.SessionNumber}</p>
               </div>
           );
       case "LearningOutcome":
         return (
           <div className="flex flex-col">
-          {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
           <p className="text-bold text-tiny capitalize text-default-400">{session.LearningOutcome}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{session.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{session.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -353,7 +355,6 @@ const ManageCourseDetail = () => {
             </Tooltip>
             <Tooltip content="Preview Assessment">
                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
-                  {/* <EyeIcon onClick={() => {window.open(session.ContentUrl, '_blank')}}/> */}
                 </span>
             </Tooltip>
           </div>
@@ -475,9 +476,6 @@ const ManageCourseDetail = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact
@@ -549,7 +547,7 @@ const ManageCourseDetail = () => {
                     <h2 className="text-lg font-semibold">Course Content</h2>
                     {contentLearningStyles.map((contentLearningStyle, index) => (
                       <div className="flex gap-2 mt-1 items-center justify-between w-full" key={index}>
-                        {(contentLearningStyle.LearningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461') ? (
+                        {(contentLearningStyle.LearningStyleId != kinestheticLearningStyleId) ? (
                           <>
                             <input onChange={(e) => {handleChangeFile(e, contentLearningStyle.LearningStyleId)}} type="file" className="relative w-full inline-flex shadow-sm border-default-200 hover:border-default-400 border-2 rounded-xl focus:border-black" style={{ padding: '13px' }} autoFocus/>
                             <Input autoFocus disabled readOnly variant="bordered" label="Learning Style" value={learningStyles.find(x => x.key == contentLearningStyle.LearningStyleId)?.label}/>
@@ -620,9 +618,18 @@ const ManageCourseDetail = () => {
                       })
                       for(let i = 0; i < contentLearningStyles.length; i++){
                         let blobUrl = "";
-                        if(contentLearningStyles[i].LearningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461'){
+                        if(contentLearningStyles[i].LearningStyleId != kinestheticLearningStyleId){
                           const contentFile = contentLearningStyles[i].Content;
                           if(contentFile instanceof File){
+                            const fileName = contentFile.name
+                            const fileExtension = fileName.split(".").pop()?.toLowerCase()
+                            if(contentLearningStyles[i].LearningStyleId == auditoryLearningStyleId && (!fileExtension || !audioExtension.includes(fileExtension))){
+                              alert("Please upload audio file for audio learning style category")
+                              return;
+                            }else if(contentLearningStyles[i].LearningStyleId == visualLearningStyleId && (!fileExtension || !visualExtension.includes(fileExtension))){
+                              alert("Please upload visual file for visual learning style category")
+                              return;
+                            }
                             blobUrl = await uploadFileToAzureBlobStorage("course-content", contentFile, courseLabel, `${sessionId}/${contentLearningStyles[i].LearningStyleId}`);
                           }
                         }else{
@@ -664,7 +671,7 @@ const ManageCourseDetail = () => {
                     try {
                       for(let i = 0; i < contentLearningStyles.length; i++){
                         let blobUrl = "";
-                        if(contentLearningStyles[i].LearningStyleId != '33658389-418c-48e7-afc7-9c08ec31a461'){
+                        if(contentLearningStyles[i].LearningStyleId != kinestheticLearningStyleId){
                           const contentFile = contentLearningStyles[i].Content;
                           if(contentFile instanceof File){
                             blobUrl = await replaceFileInAzureBlobStorage("course-content", contentFile, courseLabel, `${courseDetail.SessionId}/${contentLearningStyles[i].LearningStyleId}`);

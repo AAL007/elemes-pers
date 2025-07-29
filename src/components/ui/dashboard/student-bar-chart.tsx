@@ -3,7 +3,6 @@ import { Select, MenuItem } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import DashboardCard from './dashboard-card';
 import dynamic from "next/dynamic";
-import { fetchStudentsEnrolled } from '@/app/api/home/dashboard';
 import { fetchStudentCourses, fetchStudentScoreByCourse } from '@/app/api/home/dashboard';
 import { SelectList } from '@/app/api/data-model';
 const Chart = dynamic(() => import("react-apexcharts"), { ssr: false });
@@ -36,8 +35,8 @@ const StudentBarChart : React.FC<BarChartProps> = ({title, userId, setCourseId})
         })
         setCourses(courses);
         setCourseDDL(courses.map((z: any) => z.label));
-        setCourseValue(courses[0].label);
-        setCourseId(courses[0].key);
+        setCourseValue(courses[0].label ?? "");
+        setCourseId(courses[0].key ?? "");
     }
 
     const handleCourseChange = (e: any) => {
@@ -168,10 +167,6 @@ const StudentBarChart : React.FC<BarChartProps> = ({title, userId, setCourseId})
             name: title,
             data: scores,
         },
-        // {
-        //     name: 'Expense this month',
-        //     data: [280, 250, 325, 215, 250, 310, 280, 250],
-        // },
     ];
 
     return (

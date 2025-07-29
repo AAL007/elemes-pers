@@ -1,6 +1,6 @@
-'use client'
+'use server'
 
-import { createClient } from "../../../../utils/supabase/client"
+import { createClient } from "../../../../utils/supabase/server"
 import { MsFaculty, MsDepartment, MsCourse, DepartmentCourse } from "../../api/data-model"
 
 const supabase = createClient()
@@ -242,23 +242,3 @@ export async function deleteDepartmentCourse(departmentId: string, courseId: str
     }
     return object;
 }
-
-// export async function fetchAcademicPeriods() {
-//     const { data, error } = await supabase.from('MsAcademicPeriod').select().order('AcademicPeriodId', {ascending: true})
-//     if (error){
-//         console.log('error', error); 
-//         let object = {
-//             data: [],
-//             statusCode: 400,
-//             message: error.message
-//         }
-//         return object;
-//     };
-    
-//     let object = {
-//         data: data,
-//         statusCode: 200,
-//         message: 'Academic periods fetched successfully!'
-//     }
-//     return object;
-// }

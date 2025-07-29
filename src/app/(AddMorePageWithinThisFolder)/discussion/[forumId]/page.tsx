@@ -23,14 +23,14 @@ import {
 } from "@nextui-org/react";
 import { fetchDiscussion, createThread, updateThread, deleteThread, fetchThreads } from "@/app/api/course/course-detail-list";
 import { ForumThread, ForumThreadResponse, ForumPostResponse } from "@/app/api/data-model";
-import { fetchFileFromUrl, formatDateTime, generateGUID } from "../../../../../utils/boilerplate-function";
+import { fetchFileFromUrl, formatDateTime, generateGUID } from "../../../../../utils/utils";
 import { FileUpload } from "@/components/ui/file-upload";
 import { uploadFileToAzureBlobStorage, replaceFileInAzureBlobStorage, deleteFileInAzureBlobStorageByUrl } from "@/app/api/azure-helper";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { EditIcon } from "@/components/icon/edit-icon";
 import { DeleteIcon } from "@/components/icon/delete-icon";
-import { set } from "lodash";
+import { IconDownload } from "@tabler/icons-react";
 
 const defaultThread: ForumThreadResponse = {
     ThreadId: '',
@@ -71,24 +71,29 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
         return threads.slice(start, end);
     }, [discussionPage, threads, discussionRowsPerPage]);
 
-    const renderFile = (file: File) => {
-        const fileName = file.name.split('?')[0].split('/').pop();
+
+    const renderFile = (file: string, menu: string) => {
+        const fileName = file.split('?')[0].split('/').pop();
         const fileExtension = fileName?.split('.').pop()?.toLowerCase();
         switch (true) {
             case fileExtension === 'jpg' || fileExtension === 'jpeg' || fileExtension === 'png' || fileExtension === 'gif':
-                return <img alt={file.name} src={URL.createObjectURL(file)} className="w-full rounded-xl" />;
+                return <img alt={'image'} src={file} className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} />;
             case fileExtension === 'mp4' || fileExtension === 'webm' || fileExtension === 'avi' || fileExtension === 'mov':
-                return <video controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg':
-                return <audio controls className="w-full rounded-xl" src={URL.createObjectURL(file)} />;
-            case fileExtension === 'pdf':
-                return <iframe src={URL.createObjectURL(file)} className="w-full h-full rounded-xl" />;
+                return <video controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
+            case fileExtension === 'mp3' || fileExtension === 'wav' || fileExtension === 'ogg' || fileExtension === 'mpeg':
+                return <audio controls className={`${menu == 'content' ? 'w-full' : 'w-1/4 h-1/4'} rounded-xl`} src={file} />;
             case fileExtension === 'doc' || fileExtension === 'docx' || fileExtension === 'xls' || fileExtension === 'xlsx' || fileExtension === 'ppt' || fileExtension === 'pptx':
-                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(URL.createObjectURL(file))}`} className="w-full h-full rounded-xl" />;
+                return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(file)}`} className="w-full h-full rounded-xl" />;
             default:
-                return <a href={URL.createObjectURL(file)} download={file.name}>Download Attachment</a>;
+                return (
+                    <div className="flex flex-row justify-start items-center">
+                        <IconDownload size={20} />
+                        <a href={file} download={'file'}>Download Attachment</a>
+                    </div>
+                );
         }
     }
+
 
     useEffect(() => {
         fetchDiscussionDetail();
@@ -104,6 +109,7 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
         setDiscussionDetail(null);
         setIsLoading(true);
         const res = await fetchDiscussion(params.forumId);
+        console.log(res)
         if(!res.success){
             alert(res.message);
             setIsLoading(false);
@@ -122,7 +128,6 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
             CreatorType: res.data[0].creatorType,
             CreatedDate: res.data[0].createdDate,
             UpdatedDate: res.data[0].updatedDate,
-            File: res.data[0].contentUrl != null ? await fetchFileFromUrl(res.data[0].contentUrl) : null,
             NumOfReplies: res.data[0].numOfReplies
         }
 
@@ -338,8 +343,8 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
                             </CardHeader>
                             <CardBody className="px-3 py-0 text-small text-default-400">
                                 <h2 className="text-lg font-semibold text-gray-400">{discussionDetail?.ContentTitle}</h2>
-                                <p className={`pt-2 ${discussionDetail?.File != null ? 'pb-2' : ''}`}>{discussionDetail?.Content}</p>
-                                {discussionDetail?.File != null && (renderFile(discussionDetail?.File))}                                                 
+                                <p className={`pt-2 ${discussionDetail?.ContentUrl != null ? 'pb-2' : ''}`}>{discussionDetail?.Content}</p>
+                                {discussionDetail?.ContentUrl != null && (renderFile(discussionDetail?.ContentUrl, 'discussion'))}                                                 
                                 <span className="pt-2">
                                     {formatDateTime(discussionDetail?.UpdatedDate)}
                                 </span>
@@ -387,7 +392,7 @@ const DiscussionDetail = ({params} : {params: {forumId: string}}) => {
                                 </CardHeader>
                                 <CardBody className="px-3 py-0 text-small text-default-400">
                                     <p className={`${post.File != null ? 'pb-2' : ''}`}>{post.Content}</p>
-                                    {post.File != null && (renderFile(post.File))}                                                 
+                                    {post.File != null && (renderFile(post.ContentUrl, 'discussion'))}                                                 
                                     <span className="pt-2">
                                         {formatDateTime(post.UpdatedDate)}
                                     </span>

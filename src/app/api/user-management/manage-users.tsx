@@ -1,6 +1,6 @@
 'use server'
 import { createClient } from "../../../../utils/supabase/client"
-import { generatePassword } from "../../../../utils/boilerplate-function";
+import { generatePassword } from "../../../../utils/utils";
 import { MsStudent, MsStaff, LecturerCourse } from "../../api/data-model"
 import { createClientAdmin } from "../../../../utils/supabase/server";
 import { sendEmailNotification } from "../send-email/resend";

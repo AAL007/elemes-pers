@@ -29,8 +29,6 @@ import {
   ModalContent,
   useDisclosure,
   Spinner,
-  Select,
-  SelectItem,
 } from "@nextui-org/react";
 import { PlusIcon } from '@/components/icon/plus-icon';
 import { EditIcon } from "@/components/icon/edit-icon";
@@ -38,7 +36,7 @@ import { DeleteIcon } from "@/components/icon/delete-icon";
 import { ChevronDownIcon } from '@/components/icon/chevron-down-icon';
 import { SearchIcon } from '@/components/icon/search-icon';
 import { createFaculty, updateFaculty, deleteFaculty, fetchFaculties } from "@/app/api/enrollment/manage-faculties";
-import { generateGUID } from "../../../../../utils/boilerplate-function";
+import { generateGUID } from "../../../../../utils/utils";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store";
 import { loadUserFromStorage } from "@/lib/user-slice";
@@ -163,21 +161,18 @@ const ManageFaculties = () => {
       case "ClassName":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{faculty.FacultyName}</p>
           </div>
         );
       case "CreatedBy":
         return (
           <div className="flex flex-col">
-            {/* <p className="text-bold text-small capitalize">{cellValue}</p> */}
             <p className="text-bold text-tiny capitalize text-default-400">{faculty.CreatedBy}</p>
           </div>
         );
         case "UpdatedBy":
           return (
             <div className="flex flex-col">
-              {/* <p className="text-bold text-small capitalize">{role.UpdatedBy ?? "N/A"}</p> */}
               <p className="text-bold text-tiny capitalize text-default-400">{faculty.UpdatedBy ?? "N/A"}</p>
             </div>
           );
@@ -319,9 +314,6 @@ const ManageFaculties = () => {
     return (
       <div className="py-2 px-2 flex justify-between items-center">
         <span className="w-[30%] text-small text-default-400">
-          {/* {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${filteredItems.length} selected`} */}
         </span>
         <Pagination
           isCompact
@@ -490,12 +482,10 @@ const ManageFaculties = () => {
         classNames={{
           wrapper: "max-h-[382px]",
         }}
-        // selectedKeys={selectedKeys}
         selectionMode="single"
         sortDescriptor={sortDescriptor}
         topContent={topContent}
         topContentPlacement="outside"
-        // onSelectionChange={setSelectedKeys}
         onSortChange={
           setSortDescriptor
         }

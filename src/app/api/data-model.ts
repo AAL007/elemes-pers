@@ -128,7 +128,6 @@ export type ForumPostResponse = ForumPost & {
     CreatorName: string;
     CreatorEmail: string;
     CreatorImage: string;
-    File: File | null;
     NumOfReplies: number;
 }
 
@@ -243,10 +242,8 @@ export type SessionScheduleResponse= {
 export type MsAssessment = {
     AssessmentId: string;
     AssessmentName: string;
-    AssessmentUrl: string;
     CourseId: string;
     ClassId: string;
-    Chances: number;
     AcademicPeriodId: string;
     SessionNumber: number;
     SessionId: string;
@@ -257,28 +254,47 @@ export type MsAssessment = {
     ActiveFlag: boolean;
 }
 
-export type AssessmentAnswer = {
-    StudentId: string;
-    AssessmentId: string; 
-    AnswerUrl: string;
+export type MsQuestion = {
+    QuestionId: string;
+    AssessmentId: string;
+    Question: string;
+    ImageUrl: string | null;
+    CreatedBy: string;
     CreatedDate: any;
+    UpdatedBy: string | null;
     UpdatedDate: any;
-    Chances: number;
 }
 
-export type AssessmentAnswerResponse = AssessmentAnswer & {
-    Score: number;
-    StudentName: string;
+export type MsOption = {
+    OptionId: string;
+    QuestionId: string;
+    Option: string;
+    IsAnswer: boolean;
+    CreatedBy: string;
+    CreatedDate: any;
+    UpdatedBy: string | null;
+    UpdatedDate: any;
+}
+
+export type AssessmentAnswer = {
+    AssessmentAnswerId: string;
+    StudentId: string;
+    AssessmentId: string; 
+    QuestionId: string;
+    OptionId: string;
+    IsCorrect: boolean;
+    CreatedDate: any;
 }
 
 export type Score = {
     StudentId: string;
     AssessmentId: string;
     Score: number;
-    CreatedBy: string;
     CreatedDate: any;
-    UpdatedBy: string | null;
-    UpdatedDate: any;
+}
+
+export type ScoreResponse = Score & {
+    StudentName: string;
 }
 
 export type SelectList = {

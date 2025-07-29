@@ -2,8 +2,6 @@ import React from 'react';
 import { Box, AppBar, Toolbar, styled, Stack, IconButton, Badge, Button } from '@mui/material';
 import { Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, cn } from '@nextui-org/react';
 import PropTypes from 'prop-types';
-import Link from 'next/link';
-// components
 import Profile from './profile';
 import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import { useDispatch, useSelector } from 'react-redux';
@@ -12,38 +10,20 @@ import { loadUserFromStorage } from "@/lib/user-slice";
 import { useEffect, useState } from 'react';
 import { fetchAdministratorNotification, fetchLecturerNotification, fetchStudentNotification } from '@/app/api/home/dashboard';
 import { useMediaQuery } from '@mui/material';
+import { useSidebar } from '../sidebar/sidebar-context';
 
-interface ItemType {
-  toggleMobileSidebar:  (event: React.MouseEvent<HTMLElement>) => void;
-}
-
-const Header = ({toggleMobileSidebar}: ItemType) => {
-
-  // const lgUp = useMediaQuery((theme) => theme.breakpoints.up('lg'));
-  // const lgDown = useMediaQuery((theme) => theme.breakpoints.down('lg'));
+const Header = () => {
+  const { toggleSidebar, toggleMobileSidebar } = useSidebar();
   const dispatch = useDispatch();
   const userData = useSelector((state: RootState) => state.user);
   const [messages, setMessages] = React.useState<{Message: string, Entity: string}[]>([]);
-  // const [isCourseListPage, setIsCourseListPage] = React.useState<boolean>(false);
 
   let display = {
-    lg: 'none',
+    lg: 'inline',
     xs: 'inline',
   }
 
-  // const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
-  
-  // useEffect(() => {
-  //   const isCourseListPage = window.location.pathname.includes("course/course-list");
-  //   setIsCourseListPage(isCourseListPage);
-  // }, [lgUp, isCourseListPage])
-
-  // if(lgUp && isCourseListPage){
-  //   display = {
-  //     lg: 'inline',
-  //     xs: 'inline',
-  //   }
-  // }
+  const lgUp = useMediaQuery((theme: any) => theme.breakpoints.up("lg"));
 
   useEffect(() => {
     dispatch(loadUserFromStorage())
@@ -110,7 +90,7 @@ const Header = ({toggleMobileSidebar}: ItemType) => {
         <IconButton
           color="inherit"
           aria-label="menu"
-          onClick={toggleMobileSidebar}
+          onClick={lgUp ? toggleSidebar : toggleMobileSidebar}
           sx={{
             display,
           }}

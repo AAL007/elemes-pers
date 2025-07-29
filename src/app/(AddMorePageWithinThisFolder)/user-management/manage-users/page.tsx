@@ -250,12 +250,12 @@ const filteredItems = React.useMemo(() => {
         case "Actions":
           return (
             <div className="relative flex items-center gap-2">
-              <Tooltip content="Edit Role">
+              <Tooltip content="Edit User">
                 <span className="text-lg text-default-400 cursor-pointer active:opacity-50">
                   <EditIcon onClick={() => {handleEditClick(user.UserId)}} />
                 </span>
               </Tooltip>
-              <Tooltip color="danger" content="Delete Role">
+              <Tooltip color="danger" content="Delete User">
                 <span className="text-lg text-danger cursor-pointer active:opacity-50">
                   <DeleteIcon onClick={() => {setIsDelete(true); setUser(user); onOpen()}}/>
                 </span>
@@ -412,7 +412,7 @@ const filteredItems = React.useMemo(() => {
         <ModalContent>
           {(onClose) => (
             <>
-              <ModalHeader className="flex flex-col gap-1">Delete Role</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Delete User</ModalHeader>
               <ModalBody>
                   <div className="flex flex-col gap-4">
                     <p>Are you sure you want to delete <b>{user.UserName}</b> ?</p>

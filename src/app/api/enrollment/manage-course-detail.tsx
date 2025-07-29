@@ -48,7 +48,7 @@ export async function createCourseDetail(item: CourseDetail){
     }
     const { data, error } = await supabase.from('CourseDetail').insert(item)
     if(error){
-        return {success: false, data: [], message: error.message}
+        return {success: false, data: [], message: error.message.includes("duplicate key value violates unique constraint") ? 'Data for this session number is already exist!' : error.message}
     }
     return {success: true, data: data, message: 'Data inserted successfully!'}
 }
